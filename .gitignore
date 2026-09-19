@@ -1,0 +1,13 @@
+# env file
+.env
+
+# Logs
+logs
+*.log
+
+# OS files
+.DS_Store
+
+# Temporarily ignored (WIP) - will be added later
+README.md
+Structure.md
