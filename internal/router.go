@@ -6,9 +6,15 @@ import (
 	"github.com/Aduneer/FlyTrap/internal/api/handlers"
 )
 
-func NewRouter(store handlers.EventStore) http.Handler {
+type Store interface {
+	handlers.EventStore
+	handlers.IssueStore
+}
+
+func NewRouter(store Store) http.Handler {
 	mux := http.NewServeMux()
 	mux.Handle("/events", handlers.NewEventHandler(store))
+	mux.Handle("/issues", handlers.NewIssueHandler(store))
 
 	return mux
 }
