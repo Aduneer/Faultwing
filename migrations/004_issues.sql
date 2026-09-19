@@ -1,0 +1,8 @@
+CREATE TABLE IF NOT EXISTS issues (
+    id BIGSERIAL PRIMARY KEY,
+    fingerprint TEXT NOT NULL UNIQUE,
+    message TEXT NOT NULL,
+    stacktrace TEXT NOT NULL DEFAULT '',
+    event_count BIGINT NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
