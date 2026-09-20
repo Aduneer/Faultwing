@@ -4,12 +4,15 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
+	"errors"
 )
 
 const (
 	keyPrefix        = "fly_"
 	displayPrefixLen = 12
 )
+
+var ErrInvalid = errors.New("invalid API key")
 
 func Generate() (string, error) {
 	random := make([]byte, 32)
