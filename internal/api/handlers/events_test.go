@@ -14,7 +14,7 @@ import (
 )
 
 type fakeEventStore struct {
-	events    []models.Event
+	jobs      []models.EventJob
 	projectID int64
 }
 
@@ -26,23 +26,20 @@ func (a eventAuthenticator) AuthenticateProject(context.Context, string) (models
 	return a.project, nil
 }
 
-func (s *fakeEventStore) CreateEvent(_ context.Context, projectID int64, input models.CreateEventRequest) (models.Event, error) {
+func (s *fakeEventStore) EnqueueEvent(_ context.Context, projectID int64, input models.CreateEventRequest) (models.EventJob, error) {
 	s.projectID = projectID
-	event := models.Event{
-		ID:            int64(len(s.events) + 1),
-		ExceptionType: input.ExceptionType,
-		Message:       input.Message,
-		Stacktrace:    input.Stacktrace,
-		Environment:   input.Environment,
-		Release:       input.Release,
-		CreatedAt:     time.Date(2026, 1, 1, 12, 0, 0, 0, time.UTC),
+	job := models.EventJob{
+		ID:        int64(len(s.jobs) + 1),
+		ProjectID: projectID,
+		Payload:   input,
+		CreatedAt: time.Date(2026, 1, 1, 12, 0, 0, 0, time.UTC),
 	}
-	s.events = append(s.events, event)
+	s.jobs = append(s.jobs, job)
 
-	return event, nil
+	return job, nil
 }
 
-func TestEventHandlerCreatesEventForAuthenticatedProject(t *testing.T) {
+func TestEventHandlerQueuesEventForAuthenticatedProject(t *testing.T) {
 	store := &fakeEventStore{}
 	authenticator := eventAuthenticator{
 		project: models.Project{ID: 42, Name: "My App"},
@@ -61,19 +58,19 @@ func TestEventHandlerCreatesEventForAuthenticatedProject(t *testing.T) {
 
 	handler.ServeHTTP(createResponse, createRequest)
 
-	if createResponse.Code != http.StatusCreated {
-		t.Fatalf("expected status %d, got %d", http.StatusCreated, createResponse.Code)
+	if createResponse.Code != http.StatusAccepted {
+		t.Fatalf("expected status %d, got %d", http.StatusAccepted, createResponse.Code)
 	}
 
-	var created models.Event
-	if err := json.NewDecoder(createResponse.Body).Decode(&created); err != nil {
+	var queued enqueueEventResponse
+	if err := json.NewDecoder(createResponse.Body).Decode(&queued); err != nil {
 		t.Fatalf("decode create response: %v", err)
 	}
-	if created.Message != "database connection timed out" {
-		t.Fatalf("expected saved message, got %q", created.Message)
+	if queued.JobID != 1 || queued.QueuedAt.IsZero() {
+		t.Fatalf("expected a queue receipt, got %#v", queued)
 	}
-	if created.Environment != "production" || created.Release != "1.3.2" {
-		t.Fatalf("expected monitoring context in response, got %#v", created)
+	if len(store.jobs) != 1 || store.jobs[0].Payload.Environment != "production" || store.jobs[0].Payload.Release != "1.3.2" {
+		t.Fatalf("expected monitoring context in queued job, got %#v", store.jobs)
 	}
 	if store.projectID != 42 {
 		t.Fatalf("expected project 42, got %d", store.projectID)

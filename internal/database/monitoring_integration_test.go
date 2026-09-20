@@ -139,6 +139,14 @@ func TestMonitoringFlow(t *testing.T) {
 	if len(secondPage.Issues) != 1 || secondPage.HasMore || secondPage.Issues[0].ID == lastIssue.ID {
 		t.Fatalf("unexpected second page: %#v", secondPage)
 	}
+
+	job, err := store.EnqueueEvent(ctx, projectA.ID, event)
+	if err != nil {
+		t.Fatalf("enqueue event: %v", err)
+	}
+	if job.ID == 0 || job.ProjectID != projectA.ID || job.Payload.Message != event.Message || job.CreatedAt.IsZero() {
+		t.Fatalf("unexpected queued event: %#v", job)
+	}
 }
 
 func newIntegrationStore(t *testing.T, ctx context.Context, databaseURL string) *Store {

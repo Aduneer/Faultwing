@@ -20,3 +20,13 @@ type CreateEventRequest struct {
 	Environment   string `json:"environment"`
 	Release       string `json:"release"`
 }
+
+type EventJob struct {
+	ID          int64
+	ProjectID   int64
+	Payload     CreateEventRequest
+	Attempts    int
+	AvailableAt time.Time
+	LastError   *string
+	CreatedAt   time.Time
+}

@@ -5,17 +5,23 @@ import (
 	"encoding/json"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/Aduneer/FlyTrap/internal/middleware"
 	"github.com/Aduneer/FlyTrap/internal/models"
 )
 
 type EventStore interface {
-	CreateEvent(context.Context, int64, models.CreateEventRequest) (models.Event, error)
+	EnqueueEvent(context.Context, int64, models.CreateEventRequest) (models.EventJob, error)
 }
 
 type EventHandler struct {
 	store EventStore
+}
+
+type enqueueEventResponse struct {
+	JobID    int64     `json:"job_id"`
+	QueuedAt time.Time `json:"queued_at"`
 }
 
 func NewEventHandler(store EventStore) *EventHandler {
@@ -65,11 +71,14 @@ func (h *EventHandler) create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	event, err := h.store.CreateEvent(r.Context(), project.ID, input)
+	job, err := h.store.EnqueueEvent(r.Context(), project.ID, input)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, "could not save event")
+		writeError(w, http.StatusInternalServerError, "could not queue event")
 		return
 	}
 
-	writeJSON(w, http.StatusCreated, event)
+	writeJSON(w, http.StatusAccepted, enqueueEventResponse{
+		JobID:    job.ID,
+		QueuedAt: job.CreatedAt,
+	})
 }

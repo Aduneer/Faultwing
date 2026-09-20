@@ -42,6 +42,15 @@ curl -X POST http://localhost:8080/api/v1/events \
   }'
 ```
 
+Accepted events return `202 Accepted` with a queue receipt:
+
+```json
+{
+  "job_id": 1,
+  "queued_at": "2026-09-20T12:00:00Z"
+}
+```
+
 Event ingestion is limited per project to 60 events per minute with a burst of
 10 by default. A rejected request returns `429 Too Many Requests` with a
 `Retry-After` header. Set `EVENT_RATE_LIMIT_PER_MINUTE` and
