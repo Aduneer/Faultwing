@@ -8,6 +8,14 @@ logs
 # OS files
 .DS_Store
 
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+build/
+dist/
+*.egg-info/
+
 # Temporarily ignored (WIP) - will be added later
 README.md
 Structure.md
