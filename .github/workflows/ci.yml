@@ -8,6 +8,24 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: flytrap_test
+          POSTGRES_USER: flytrap
+          POSTGRES_PASSWORD: flytrap
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U flytrap -d flytrap_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      TEST_DATABASE_URL: postgres://flytrap:flytrap@localhost:5432/flytrap_test?sslmode=disable
+
     steps:
       - name: Check out the code
         uses: actions/checkout@v4

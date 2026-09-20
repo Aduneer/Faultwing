@@ -1,0 +1,156 @@
+package database
+
+import (
+	"context"
+	"fmt"
+	"os"
+	"testing"
+	"time"
+
+	"github.com/Aduneer/FlyTrap/internal/models"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
+)
+
+func TestMonitoringFlow(t *testing.T) {
+	databaseURL := os.Getenv("TEST_DATABASE_URL")
+	if databaseURL == "" {
+		t.Skip("TEST_DATABASE_URL is not set")
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	store := newIntegrationStore(t, ctx, databaseURL)
+
+	projectA, keyA, err := store.CreateProject(ctx, "Project A")
+	if err != nil {
+		t.Fatalf("create project A: %v", err)
+	}
+	projectB, keyB, err := store.CreateProject(ctx, "Project B")
+	if err != nil {
+		t.Fatalf("create project B: %v", err)
+	}
+
+	authenticatedA, err := store.AuthenticateProject(ctx, keyA)
+	if err != nil {
+		t.Fatalf("authenticate project A: %v", err)
+	}
+	authenticatedB, err := store.AuthenticateProject(ctx, keyB)
+	if err != nil {
+		t.Fatalf("authenticate project B: %v", err)
+	}
+	if authenticatedA.ID != projectA.ID || authenticatedB.ID != projectB.ID {
+		t.Fatal("API keys resolved to the wrong projects")
+	}
+
+	event := models.CreateEventRequest{
+		ExceptionType: "DatabaseTimeoutError",
+		Message:       "database connection timed out",
+		Stacktrace:    "db/client.go:42",
+		Environment:   "production",
+		Release:       "1.3.2",
+	}
+
+	first, err := store.CreateEvent(ctx, authenticatedA.ID, event)
+	if err != nil {
+		t.Fatalf("create first project A event: %v", err)
+	}
+	second, err := store.CreateEvent(ctx, authenticatedA.ID, event)
+	if err != nil {
+		t.Fatalf("create second project A event: %v", err)
+	}
+	otherProject, err := store.CreateEvent(ctx, authenticatedB.ID, event)
+	if err != nil {
+		t.Fatalf("create project B event: %v", err)
+	}
+
+	if first.IssueID != second.IssueID {
+		t.Fatal("matching events in one project should share an issue")
+	}
+	if first.IssueID == otherProject.IssueID {
+		t.Fatal("events from different projects should not share an issue")
+	}
+
+	issuesA, err := store.ListIssues(ctx, projectA.ID, "")
+	if err != nil {
+		t.Fatalf("list project A issues: %v", err)
+	}
+	issuesB, err := store.ListIssues(ctx, projectB.ID, "")
+	if err != nil {
+		t.Fatalf("list project B issues: %v", err)
+	}
+	if len(issuesA) != 1 || issuesA[0].EventCount != 2 {
+		t.Fatalf("expected project A count 2, got %#v", issuesA)
+	}
+	if len(issuesB) != 1 || issuesB[0].EventCount != 1 {
+		t.Fatalf("expected project B count 1, got %#v", issuesB)
+	}
+
+	resolved, err := store.UpdateIssueStatus(ctx, projectA.ID, first.IssueID, models.IssueStatusResolved)
+	if err != nil {
+		t.Fatalf("resolve project A issue: %v", err)
+	}
+	if resolved.Status != models.IssueStatusResolved || resolved.ResolvedAt == nil {
+		t.Fatalf("expected resolved issue with timestamp, got %#v", resolved)
+	}
+
+	if _, err := store.CreateEvent(ctx, projectA.ID, event); err != nil {
+		t.Fatalf("create regression event: %v", err)
+	}
+	detail, err := store.GetIssue(ctx, projectA.ID, first.IssueID)
+	if err != nil {
+		t.Fatalf("load reopened issue: %v", err)
+	}
+	if detail.Status != models.IssueStatusOpen || detail.ResolvedAt != nil || detail.EventCount != 3 {
+		t.Fatalf("expected reopened issue with count 3, got %#v", detail.Issue)
+	}
+	if len(detail.Environments) != 1 || detail.Environments[0] != "production" ||
+		len(detail.Releases) != 1 || detail.Releases[0] != "1.3.2" {
+		t.Fatalf("unexpected monitoring context: %#v", detail)
+	}
+}
+
+func newIntegrationStore(t *testing.T, ctx context.Context, databaseURL string) *Store {
+	t.Helper()
+
+	adminPool, err := pgxpool.New(ctx, databaseURL)
+	if err != nil {
+		t.Fatalf("open integration database: %v", err)
+	}
+	t.Cleanup(adminPool.Close)
+
+	schema := fmt.Sprintf("flytrap_test_%d", time.Now().UnixNano())
+	identifier := pgx.Identifier{schema}.Sanitize()
+	if _, err := adminPool.Exec(ctx, "CREATE SCHEMA "+identifier); err != nil {
+		t.Fatalf("create integration schema: %v", err)
+	}
+	t.Cleanup(func() {
+		cleanupCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if _, err := adminPool.Exec(cleanupCtx, "DROP SCHEMA "+identifier+" CASCADE"); err != nil {
+			t.Errorf("drop integration schema: %v", err)
+		}
+	})
+
+	config, err := pgxpool.ParseConfig(databaseURL)
+	if err != nil {
+		t.Fatalf("parse integration database URL: %v", err)
+	}
+	config.ConnConfig.RuntimeParams["search_path"] = schema
+
+	pool, err := pgxpool.NewWithConfig(ctx, config)
+	if err != nil {
+		t.Fatalf("open isolated integration schema: %v", err)
+	}
+	t.Cleanup(pool.Close)
+
+	if err := pool.Ping(ctx); err != nil {
+		t.Fatalf("ping integration database: %v", err)
+	}
+	if err := migrate(ctx, pool); err != nil {
+		t.Fatalf("migrate integration schema: %v", err)
+	}
+
+	return NewStore(pool)
+}
