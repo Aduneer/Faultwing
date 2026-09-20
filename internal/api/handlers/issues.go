@@ -2,7 +2,9 @@ package handlers
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -14,10 +16,15 @@ import (
 type IssueStore interface {
 	ListIssues(context.Context, int64, models.IssueStatus) ([]models.Issue, error)
 	GetIssue(context.Context, int64, int64) (models.IssueDetail, error)
+	UpdateIssueStatus(context.Context, int64, int64, models.IssueStatus) (models.Issue, error)
 }
 
 type IssueHandler struct {
 	store IssueStore
+}
+
+type updateIssueRequest struct {
+	Status models.IssueStatus `json:"status"`
 }
 
 func NewIssueHandler(store IssueStore) *IssueHandler {
@@ -25,12 +32,6 @@ func NewIssueHandler(store IssueStore) *IssueHandler {
 }
 
 func (h *IssueHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		w.Header().Set("Allow", "GET")
-		writeError(w, http.StatusMethodNotAllowed, "method not allowed")
-		return
-	}
-
 	project, ok := middleware.ProjectFromContext(r.Context())
 	if !ok {
 		writeError(w, http.StatusInternalServerError, "authenticated project is missing")
@@ -40,6 +41,10 @@ func (h *IssueHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	path := strings.TrimPrefix(r.URL.Path, "/api/v1/issues")
 	path = strings.Trim(path, "/")
 	if path == "" {
+		if r.Method != http.MethodGet {
+			methodNotAllowed(w, "GET")
+			return
+		}
 		h.list(w, r, project.ID)
 		return
 	}
@@ -50,7 +55,14 @@ func (h *IssueHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.get(w, r, project.ID, issueID)
+	switch r.Method {
+	case http.MethodGet:
+		h.get(w, r, project.ID, issueID)
+	case http.MethodPatch:
+		h.updateStatus(w, r, project.ID, issueID)
+	default:
+		methodNotAllowed(w, "GET, PATCH")
+	}
 }
 
 func (h *IssueHandler) list(w http.ResponseWriter, r *http.Request, projectID int64) {
@@ -81,4 +93,43 @@ func (h *IssueHandler) get(w http.ResponseWriter, r *http.Request, projectID, is
 	}
 
 	writeJSON(w, http.StatusOK, detail)
+}
+
+func (h *IssueHandler) updateStatus(w http.ResponseWriter, r *http.Request, projectID, issueID int64) {
+	r.Body = http.MaxBytesReader(w, r.Body, 16<<10)
+	defer r.Body.Close()
+
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+
+	var input updateIssueRequest
+	if err := decoder.Decode(&input); err != nil {
+		writeError(w, http.StatusBadRequest, "request body must be valid JSON")
+		return
+	}
+	if err := decoder.Decode(&struct{}{}); err != io.EOF {
+		writeError(w, http.StatusBadRequest, "request body must contain one JSON object")
+		return
+	}
+	if !input.Status.Valid() {
+		writeError(w, http.StatusBadRequest, "status must be open, resolved, or ignored")
+		return
+	}
+
+	issue, err := h.store.UpdateIssueStatus(r.Context(), projectID, issueID, input.Status)
+	if err != nil {
+		if errors.Is(err, models.ErrIssueNotFound) {
+			writeError(w, http.StatusNotFound, err.Error())
+			return
+		}
+		writeError(w, http.StatusInternalServerError, "could not update issue")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, issue)
+}
+
+func methodNotAllowed(w http.ResponseWriter, allow string) {
+	w.Header().Set("Allow", allow)
+	writeError(w, http.StatusMethodNotAllowed, "method not allowed")
 }

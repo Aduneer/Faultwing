@@ -47,3 +47,12 @@ Get an issue with its affected environments and releases:
 curl http://localhost:8080/api/v1/issues/1 \
   -H 'Authorization: Bearer fly_your_api_key'
 ```
+
+Resolve, reopen, or ignore an issue:
+
+```bash
+curl -X PATCH http://localhost:8080/api/v1/issues/1 \
+  -H 'Authorization: Bearer fly_your_api_key' \
+  -H 'Content-Type: application/json' \
+  -d '{"status":"resolved"}'
+```

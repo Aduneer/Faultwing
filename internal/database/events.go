@@ -33,7 +33,15 @@ func (s *Store) CreateEvent(ctx context.Context, projectID int64, input models.C
 			last_seen = NOW(),
 			exception_type = EXCLUDED.exception_type,
 			message = EXCLUDED.message,
-			stacktrace = EXCLUDED.stacktrace
+			stacktrace = EXCLUDED.stacktrace,
+			status = CASE
+				WHEN issues.status = 'resolved' THEN 'open'
+				ELSE issues.status
+			END,
+			resolved_at = CASE
+				WHEN issues.status = 'resolved' THEN NULL
+				ELSE issues.resolved_at
+			END
 		RETURNING id
 	`, projectID, issueFingerprint, input.ExceptionType, input.Message, input.Stacktrace).Scan(&issueID)
 	if err != nil {

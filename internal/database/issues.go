@@ -83,6 +83,33 @@ func (s *Store) GetIssue(ctx context.Context, projectID, issueID int64) (models.
 	return detail, nil
 }
 
+func (s *Store) UpdateIssueStatus(
+	ctx context.Context,
+	projectID, issueID int64,
+	status models.IssueStatus,
+) (models.Issue, error) {
+	var issue models.Issue
+	err := scanIssue(s.pool.QueryRow(ctx, `
+		UPDATE issues
+		SET status = $3,
+			resolved_at = CASE
+				WHEN $3 = 'resolved' THEN COALESCE(resolved_at, NOW())
+				ELSE NULL
+			END
+		WHERE project_id = $1 AND id = $2
+		RETURNING id, project_id, fingerprint, exception_type, message, stacktrace,
+			status, event_count, first_seen, last_seen, resolved_at, created_at
+	`, projectID, issueID, string(status)), &issue)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return models.Issue{}, models.ErrIssueNotFound
+	}
+	if err != nil {
+		return models.Issue{}, err
+	}
+
+	return issue, nil
+}
+
 type issueScanner interface {
 	Scan(...any) error
 }

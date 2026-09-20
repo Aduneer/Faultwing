@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/Aduneer/FlyTrap/internal/middleware"
@@ -17,6 +18,7 @@ type fakeIssueStore struct {
 	projectID int64
 	issueID   int64
 	status    models.IssueStatus
+	updated   bool
 }
 
 func (s *fakeIssueStore) ListIssues(_ context.Context, projectID int64, status models.IssueStatus) ([]models.Issue, error) {
@@ -29,6 +31,18 @@ func (s *fakeIssueStore) GetIssue(_ context.Context, projectID, issueID int64) (
 	s.projectID = projectID
 	s.issueID = issueID
 	return s.detail, s.err
+}
+
+func (s *fakeIssueStore) UpdateIssueStatus(
+	_ context.Context,
+	projectID, issueID int64,
+	status models.IssueStatus,
+) (models.Issue, error) {
+	s.projectID = projectID
+	s.issueID = issueID
+	s.status = status
+	s.updated = true
+	return models.Issue{ID: issueID, ProjectID: projectID, Status: status}, s.err
 }
 
 func authenticatedIssueHandler(store *fakeIssueStore) http.Handler {
@@ -86,5 +100,39 @@ func TestIssueHandlerDoesNotExposeAnotherProjectsIssue(t *testing.T) {
 
 	if response.Code != http.StatusNotFound {
 		t.Fatalf("expected status %d, got %d", http.StatusNotFound, response.Code)
+	}
+}
+
+func TestIssueHandlerUpdatesStatus(t *testing.T) {
+	store := &fakeIssueStore{}
+	handler := authenticatedIssueHandler(store)
+	request := httptest.NewRequest(http.MethodPatch, "/api/v1/issues/7", strings.NewReader(`{"status":"resolved"}`))
+	request.Header.Set("Authorization", "Bearer fly_test-key")
+	response := httptest.NewRecorder()
+
+	handler.ServeHTTP(response, request)
+
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d", http.StatusOK, response.Code)
+	}
+	if store.projectID != 42 || store.issueID != 7 || store.status != models.IssueStatusResolved {
+		t.Fatalf("unexpected update: project=%d issue=%d status=%q", store.projectID, store.issueID, store.status)
+	}
+}
+
+func TestIssueHandlerRejectsInvalidStatus(t *testing.T) {
+	store := &fakeIssueStore{}
+	handler := authenticatedIssueHandler(store)
+	request := httptest.NewRequest(http.MethodPatch, "/api/v1/issues/7", strings.NewReader(`{"status":"closed"}`))
+	request.Header.Set("Authorization", "Bearer fly_test-key")
+	response := httptest.NewRecorder()
+
+	handler.ServeHTTP(response, request)
+
+	if response.Code != http.StatusBadRequest {
+		t.Fatalf("expected status %d, got %d", http.StatusBadRequest, response.Code)
+	}
+	if store.updated {
+		t.Fatal("invalid status should not reach the store")
 	}
 }
