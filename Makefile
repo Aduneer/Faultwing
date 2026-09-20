@@ -1,4 +1,4 @@
-.PHONY: run db-up db-down test test-integration test-python
+.PHONY: run db-up db-down test test-integration test-python generate-errors
 
 run:
 	go run ./cmd/api
@@ -18,3 +18,6 @@ test-integration:
 
 test-python:
 	PYTHONPATH=sdk/python python3 -m unittest discover -s sdk/python/tests -v
+
+generate-errors:
+	PYTHONPATH=sdk/python python3 scripts/generate-errors.py $(ARGS)
