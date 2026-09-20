@@ -1,19 +1,27 @@
 # API
 
-## Events
+## Projects
 
 Start PostgreSQL with `make db-up`, then start the API with `make run`.
 
-Create an event:
+Create a project:
 
 ```bash
-curl -X POST http://localhost:8080/events \
+curl -X POST http://localhost:8080/api/v1/projects \
   -H 'Content-Type: application/json' \
-  -d '{"message":"database connection timed out","stacktrace":"db/client.go:42"}'
+  -d '{"name":"My App"}'
 ```
 
-List events:
+The response contains an API key. It is only returned once, so copy it before
+submitting events.
+
+## Events
+
+Create an event using the project's API key:
 
 ```bash
-curl http://localhost:8080/events
+curl -X POST http://localhost:8080/api/v1/events \
+  -H 'Authorization: Bearer fly_your_api_key' \
+  -H 'Content-Type: application/json' \
+  -d '{"message":"database connection timed out","stacktrace":"db/client.go:42"}'
 ```

@@ -4,19 +4,19 @@ import (
 	"net/http"
 
 	"github.com/Aduneer/FlyTrap/internal/api/handlers"
+	"github.com/Aduneer/FlyTrap/internal/middleware"
 )
 
 type Store interface {
 	handlers.EventStore
-	handlers.IssueStore
 	handlers.ProjectStore
+	middleware.APIKeyAuthenticator
 }
 
 func NewRouter(store Store) http.Handler {
 	mux := http.NewServeMux()
-	mux.Handle("/events", handlers.NewEventHandler(store))
-	mux.Handle("/issues", handlers.NewIssueHandler(store))
 	mux.Handle("/api/v1/projects", handlers.NewProjectHandler(store))
+	mux.Handle("/api/v1/events", middleware.RequireAPIKey(store, handlers.NewEventHandler(store)))
 
 	return mux
 }

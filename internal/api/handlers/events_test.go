@@ -9,14 +9,25 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Aduneer/FlyTrap/internal/middleware"
 	"github.com/Aduneer/FlyTrap/internal/models"
 )
 
 type fakeEventStore struct {
-	events []models.Event
+	events    []models.Event
+	projectID int64
 }
 
-func (s *fakeEventStore) CreateEvent(_ context.Context, input models.CreateEventRequest) (models.Event, error) {
+type eventAuthenticator struct {
+	project models.Project
+}
+
+func (a eventAuthenticator) AuthenticateProject(context.Context, string) (models.Project, error) {
+	return a.project, nil
+}
+
+func (s *fakeEventStore) CreateEvent(_ context.Context, projectID int64, input models.CreateEventRequest) (models.Event, error) {
+	s.projectID = projectID
 	event := models.Event{
 		ID:         int64(len(s.events) + 1),
 		Message:    input.Message,
@@ -28,18 +39,18 @@ func (s *fakeEventStore) CreateEvent(_ context.Context, input models.CreateEvent
 	return event, nil
 }
 
-func (s *fakeEventStore) ListEvents(context.Context) ([]models.Event, error) {
-	return s.events, nil
-}
-
-func TestEventHandlerCreateAndList(t *testing.T) {
+func TestEventHandlerCreatesEventForAuthenticatedProject(t *testing.T) {
 	store := &fakeEventStore{}
-	handler := NewEventHandler(store)
+	authenticator := eventAuthenticator{
+		project: models.Project{ID: 42, Name: "My App"},
+	}
+	handler := middleware.RequireAPIKey(authenticator, NewEventHandler(store))
 
-	createRequest := httptest.NewRequest(http.MethodPost, "/events", strings.NewReader(`{
+	createRequest := httptest.NewRequest(http.MethodPost, "/api/v1/events", strings.NewReader(`{
 		"message": "database connection timed out",
 		"stacktrace": "db/client.go:42"
 	}`))
+	createRequest.Header.Set("Authorization", "Bearer fly_test-key")
 	createResponse := httptest.NewRecorder()
 
 	handler.ServeHTTP(createResponse, createRequest)
@@ -55,21 +66,7 @@ func TestEventHandlerCreateAndList(t *testing.T) {
 	if created.Message != "database connection timed out" {
 		t.Fatalf("expected saved message, got %q", created.Message)
 	}
-
-	listRequest := httptest.NewRequest(http.MethodGet, "/events", nil)
-	listResponse := httptest.NewRecorder()
-
-	handler.ServeHTTP(listResponse, listRequest)
-
-	if listResponse.Code != http.StatusOK {
-		t.Fatalf("expected status %d, got %d", http.StatusOK, listResponse.Code)
-	}
-
-	var events []models.Event
-	if err := json.NewDecoder(listResponse.Body).Decode(&events); err != nil {
-		t.Fatalf("decode list response: %v", err)
-	}
-	if len(events) != 1 || events[0].ID != created.ID {
-		t.Fatalf("expected one returned event, got %#v", events)
+	if store.projectID != 42 {
+		t.Fatalf("expected project 42, got %d", store.projectID)
 	}
 }

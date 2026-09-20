@@ -6,12 +6,12 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/Aduneer/FlyTrap/internal/middleware"
 	"github.com/Aduneer/FlyTrap/internal/models"
 )
 
 type EventStore interface {
-	CreateEvent(context.Context, models.CreateEventRequest) (models.Event, error)
-	ListEvents(context.Context) ([]models.Event, error)
+	CreateEvent(context.Context, int64, models.CreateEventRequest) (models.Event, error)
 }
 
 type EventHandler struct {
@@ -23,18 +23,22 @@ func NewEventHandler(store EventStore) *EventHandler {
 }
 
 func (h *EventHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case http.MethodPost:
-		h.create(w, r)
-	case http.MethodGet:
-		h.list(w, r)
-	default:
-		w.Header().Set("Allow", "GET, POST")
+	if r.Method != http.MethodPost {
+		w.Header().Set("Allow", "POST")
 		writeError(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
 	}
+
+	h.create(w, r)
 }
 
 func (h *EventHandler) create(w http.ResponseWriter, r *http.Request) {
+	project, ok := middleware.ProjectFromContext(r.Context())
+	if !ok {
+		writeError(w, http.StatusInternalServerError, "authenticated project is missing")
+		return
+	}
+
 	defer r.Body.Close()
 
 	var input models.CreateEventRequest
@@ -48,21 +52,11 @@ func (h *EventHandler) create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	event, err := h.store.CreateEvent(r.Context(), input)
+	event, err := h.store.CreateEvent(r.Context(), project.ID, input)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "could not save event")
 		return
 	}
 
 	writeJSON(w, http.StatusCreated, event)
-}
-
-func (h *EventHandler) list(w http.ResponseWriter, r *http.Request) {
-	events, err := h.store.ListEvents(r.Context())
-	if err != nil {
-		writeError(w, http.StatusInternalServerError, "could not load events")
-		return
-	}
-
-	writeJSON(w, http.StatusOK, events)
 }
