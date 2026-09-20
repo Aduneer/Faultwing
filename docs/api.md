@@ -23,5 +23,11 @@ Create an event using the project's API key:
 curl -X POST http://localhost:8080/api/v1/events \
   -H 'Authorization: Bearer fly_your_api_key' \
   -H 'Content-Type: application/json' \
-  -d '{"message":"database connection timed out","stacktrace":"db/client.go:42"}'
+  -d '{
+    "exception_type":"DatabaseTimeoutError",
+    "message":"database connection timed out",
+    "stacktrace":"db/client.go:42",
+    "environment":"production",
+    "release":"1.3.2"
+  }'
 ```

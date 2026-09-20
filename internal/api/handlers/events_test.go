@@ -29,10 +29,13 @@ func (a eventAuthenticator) AuthenticateProject(context.Context, string) (models
 func (s *fakeEventStore) CreateEvent(_ context.Context, projectID int64, input models.CreateEventRequest) (models.Event, error) {
 	s.projectID = projectID
 	event := models.Event{
-		ID:         int64(len(s.events) + 1),
-		Message:    input.Message,
-		Stacktrace: input.Stacktrace,
-		CreatedAt:  time.Date(2026, 1, 1, 12, 0, 0, 0, time.UTC),
+		ID:            int64(len(s.events) + 1),
+		ExceptionType: input.ExceptionType,
+		Message:       input.Message,
+		Stacktrace:    input.Stacktrace,
+		Environment:   input.Environment,
+		Release:       input.Release,
+		CreatedAt:     time.Date(2026, 1, 1, 12, 0, 0, 0, time.UTC),
 	}
 	s.events = append(s.events, event)
 
@@ -47,8 +50,11 @@ func TestEventHandlerCreatesEventForAuthenticatedProject(t *testing.T) {
 	handler := middleware.RequireAPIKey(authenticator, NewEventHandler(store))
 
 	createRequest := httptest.NewRequest(http.MethodPost, "/api/v1/events", strings.NewReader(`{
+		"exception_type": "DatabaseTimeoutError",
 		"message": "database connection timed out",
-		"stacktrace": "db/client.go:42"
+		"stacktrace": "db/client.go:42",
+		"environment": "production",
+		"release": "1.3.2"
 	}`))
 	createRequest.Header.Set("Authorization", "Bearer fly_test-key")
 	createResponse := httptest.NewRecorder()
@@ -65,6 +71,9 @@ func TestEventHandlerCreatesEventForAuthenticatedProject(t *testing.T) {
 	}
 	if created.Message != "database connection timed out" {
 		t.Fatalf("expected saved message, got %q", created.Message)
+	}
+	if created.Environment != "production" || created.Release != "1.3.2" {
+		t.Fatalf("expected monitoring context in response, got %#v", created)
 	}
 	if store.projectID != 42 {
 		t.Fatalf("expected project 42, got %d", store.projectID)

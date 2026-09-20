@@ -47,8 +47,21 @@ func (h *EventHandler) create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if strings.TrimSpace(input.Message) == "" {
+	input.ExceptionType = strings.TrimSpace(input.ExceptionType)
+	input.Message = strings.TrimSpace(input.Message)
+	input.Environment = strings.TrimSpace(input.Environment)
+	input.Release = strings.TrimSpace(input.Release)
+
+	if input.ExceptionType == "" {
+		writeError(w, http.StatusBadRequest, "exception_type is required")
+		return
+	}
+	if input.Message == "" {
 		writeError(w, http.StatusBadRequest, "message is required")
+		return
+	}
+	if input.Environment == "" {
+		writeError(w, http.StatusBadRequest, "environment is required")
 		return
 	}
 

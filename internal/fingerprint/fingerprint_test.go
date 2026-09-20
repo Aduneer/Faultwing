@@ -3,32 +3,18 @@ package fingerprint
 import "testing"
 
 func TestEvent(t *testing.T) {
-	tests := []struct {
-		name       string
-		message    string
-		stacktrace string
-		expected   string
-	}{
-		{
-			name:       "basic event",
-			message:    "error",
-			stacktrace: "something went wrong",
-			expected:   "2f63f8e1fe56595e51ef448ca31708e719c880b0d0d6ca98189dd933cbddf07a",
-		},
-		{
-			name:       "different event",
-			message:    "error",
-			stacktrace: "another error occurred",
-			expected:   "efa5526732185c1ea8858358658e3c170cf93ccc4a721a59e43f43b42ee0f936",
-		},
-	}
+	fingerprint := Event("DatabaseTimeoutError", "db/client.go:42")
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			fingerprint := Event(tt.message, tt.stacktrace)
-			if fingerprint != tt.expected {
-				t.Errorf("expected %s, got %s", tt.expected, fingerprint)
-			}
-		})
+	if fingerprint != Event("DatabaseTimeoutError", "db/client.go:42") {
+		t.Fatal("same exception should produce the same fingerprint")
+	}
+	if fingerprint == Event("ConnectionError", "db/client.go:42") {
+		t.Fatal("different exception types should produce different fingerprints")
+	}
+	if fingerprint == Event("DatabaseTimeoutError", "db/client.go:99") {
+		t.Fatal("different stack traces should produce different fingerprints")
+	}
+	if Event("a:b", "c") == Event("a", "b:c") {
+		t.Fatal("field boundaries should not produce fingerprint collisions")
 	}
 }

@@ -23,22 +23,19 @@ func (s *Store) CreateEvent(ctx context.Context, projectID int64, input models.C
 	}
 	defer tx.Rollback(ctx)
 
-	issueFingerprint := fingerprint.Event(input.Message, input.Stacktrace)
-	var issue models.Issue
+	issueFingerprint := fingerprint.Event(input.ExceptionType, input.Stacktrace)
+	var issueID int64
 	err = tx.QueryRow(ctx, `
-		INSERT INTO issues (project_id, fingerprint, message, stacktrace, event_count)
-		VALUES ($1, $2, $3, $4, 1)
+		INSERT INTO issues (project_id, fingerprint, exception_type, message, stacktrace, event_count)
+		VALUES ($1, $2, $3, $4, $5, 1)
 		ON CONFLICT (project_id, fingerprint) DO UPDATE
-		SET event_count = issues.event_count + 1
-		RETURNING id, fingerprint, message, stacktrace, event_count, created_at
-	`, projectID, issueFingerprint, input.Message, input.Stacktrace).Scan(
-		&issue.ID,
-		&issue.Fingerprint,
-		&issue.Message,
-		&issue.Stacktrace,
-		&issue.EventCount,
-		&issue.CreatedAt,
-	)
+		SET event_count = issues.event_count + 1,
+			last_seen = NOW(),
+			exception_type = EXCLUDED.exception_type,
+			message = EXCLUDED.message,
+			stacktrace = EXCLUDED.stacktrace
+		RETURNING id
+	`, projectID, issueFingerprint, input.ExceptionType, input.Message, input.Stacktrace).Scan(&issueID)
 	if err != nil {
 		return models.Event{}, err
 	}
@@ -46,14 +43,17 @@ func (s *Store) CreateEvent(ctx context.Context, projectID int64, input models.C
 	var event models.Event
 
 	err = tx.QueryRow(ctx, `
-		INSERT INTO events (issue_id, message, stacktrace)
-		VALUES ($1, $2, $3)
-		RETURNING id, issue_id, message, stacktrace, created_at
-	`, issue.ID, input.Message, input.Stacktrace).Scan(
+		INSERT INTO events (issue_id, exception_type, message, stacktrace, environment, release)
+		VALUES ($1, $2, $3, $4, $5, $6)
+		RETURNING id, issue_id, exception_type, message, stacktrace, environment, release, created_at
+	`, issueID, input.ExceptionType, input.Message, input.Stacktrace, input.Environment, input.Release).Scan(
 		&event.ID,
 		&event.IssueID,
+		&event.ExceptionType,
 		&event.Message,
 		&event.Stacktrace,
+		&event.Environment,
+		&event.Release,
 		&event.CreatedAt,
 	)
 	if err != nil {
