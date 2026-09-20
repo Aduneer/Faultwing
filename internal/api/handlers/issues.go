@@ -128,8 +128,3 @@ func (h *IssueHandler) updateStatus(w http.ResponseWriter, r *http.Request, proj
 
 	writeJSON(w, http.StatusOK, issue)
 }
-
-func methodNotAllowed(w http.ResponseWriter, allow string) {
-	w.Header().Set("Allow", allow)
-	writeError(w, http.StatusMethodNotAllowed, "method not allowed")
-}

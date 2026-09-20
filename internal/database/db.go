@@ -24,3 +24,7 @@ func Open(ctx context.Context, databaseURL string) (*pgxpool.Pool, error) {
 
 	return pool, nil
 }
+
+func (s *Store) Ping(ctx context.Context) error {
+	return s.pool.Ping(ctx)
+}

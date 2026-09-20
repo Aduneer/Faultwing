@@ -1,5 +1,15 @@
 # API
 
+## Service health
+
+`GET /health` reports that the API process is running. `GET /ready` also checks
+that PostgreSQL is reachable.
+
+```bash
+curl http://localhost:8080/health
+curl http://localhost:8080/ready
+```
+
 ## Projects
 
 Start PostgreSQL with `make db-up`, then start the API with `make run`.
