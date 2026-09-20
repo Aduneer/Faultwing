@@ -2,16 +2,18 @@ package handlers
 
 import (
 	"context"
-	"encoding/json"
+	"errors"
 	"net/http"
+	"strconv"
 	"strings"
 
+	"github.com/Aduneer/FlyTrap/internal/middleware"
 	"github.com/Aduneer/FlyTrap/internal/models"
 )
 
 type IssueStore interface {
-	CreateIssue(context.Context, models.CreateIssueRequest) (models.Issue, error)
-	ListIssues(context.Context) ([]models.Issue, error)
+	ListIssues(context.Context, int64, models.IssueStatus) ([]models.Issue, error)
+	GetIssue(context.Context, int64, int64) (models.IssueDetail, error)
 }
 
 type IssueHandler struct {
@@ -23,46 +25,60 @@ func NewIssueHandler(store IssueStore) *IssueHandler {
 }
 
 func (h *IssueHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case http.MethodPost:
-		h.create(w, r)
-	case http.MethodGet:
-		h.list(w, r)
-	default:
-		w.Header().Set("Allow", "GET, POST")
+	if r.Method != http.MethodGet {
+		w.Header().Set("Allow", "GET")
 		writeError(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
 	}
+
+	project, ok := middleware.ProjectFromContext(r.Context())
+	if !ok {
+		writeError(w, http.StatusInternalServerError, "authenticated project is missing")
+		return
+	}
+
+	path := strings.TrimPrefix(r.URL.Path, "/api/v1/issues")
+	path = strings.Trim(path, "/")
+	if path == "" {
+		h.list(w, r, project.ID)
+		return
+	}
+
+	issueID, err := strconv.ParseInt(path, 10, 64)
+	if err != nil || issueID < 1 {
+		writeError(w, http.StatusNotFound, "issue not found")
+		return
+	}
+
+	h.get(w, r, project.ID, issueID)
 }
 
-func (h *IssueHandler) create(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
-
-	var input models.CreateIssueRequest
-	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		writeError(w, http.StatusBadRequest, "request body must be valid JSON")
+func (h *IssueHandler) list(w http.ResponseWriter, r *http.Request, projectID int64) {
+	status := models.IssueStatus(r.URL.Query().Get("status"))
+	if status != "" && !status.Valid() {
+		writeError(w, http.StatusBadRequest, "status must be open, resolved, or ignored")
 		return
 	}
 
-	if strings.TrimSpace(input.Message) == "" {
-		writeError(w, http.StatusBadRequest, "message is required")
-		return
-	}
-
-	issue, err := h.store.CreateIssue(r.Context(), input)
-	if err != nil {
-		writeError(w, http.StatusInternalServerError, "could not save issue")
-		return
-	}
-
-	writeJSON(w, http.StatusCreated, issue)
-}
-
-func (h *IssueHandler) list(w http.ResponseWriter, r *http.Request) {
-	issues, err := h.store.ListIssues(r.Context())
+	issues, err := h.store.ListIssues(r.Context(), projectID, status)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "could not load issues")
 		return
 	}
 
 	writeJSON(w, http.StatusOK, issues)
+}
+
+func (h *IssueHandler) get(w http.ResponseWriter, r *http.Request, projectID, issueID int64) {
+	detail, err := h.store.GetIssue(r.Context(), projectID, issueID)
+	if err != nil {
+		if errors.Is(err, models.ErrIssueNotFound) {
+			writeError(w, http.StatusNotFound, err.Error())
+			return
+		}
+		writeError(w, http.StatusInternalServerError, "could not load issue")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, detail)
 }

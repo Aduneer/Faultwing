@@ -31,3 +31,19 @@ curl -X POST http://localhost:8080/api/v1/events \
     "release":"1.3.2"
   }'
 ```
+
+## Issues
+
+List issues for the API key's project, optionally filtered by status:
+
+```bash
+curl 'http://localhost:8080/api/v1/issues?status=open' \
+  -H 'Authorization: Bearer fly_your_api_key'
+```
+
+Get an issue with its affected environments and releases:
+
+```bash
+curl http://localhost:8080/api/v1/issues/1 \
+  -H 'Authorization: Bearer fly_your_api_key'
+```
