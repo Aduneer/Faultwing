@@ -14,6 +14,7 @@ import (
 	"github.com/Aduneer/FlyTrap/internal"
 	"github.com/Aduneer/FlyTrap/internal/config"
 	"github.com/Aduneer/FlyTrap/internal/database"
+	"github.com/Aduneer/FlyTrap/internal/middleware"
 )
 
 const (
@@ -34,7 +35,10 @@ func run() error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	cfg := config.Load()
+	cfg, err := config.Load()
+	if err != nil {
+		return fmt.Errorf("load configuration: %w", err)
+	}
 
 	pool, err := database.Open(ctx, cfg.DatabaseURL)
 	if err != nil {
@@ -43,9 +47,13 @@ func run() error {
 	defer pool.Close()
 
 	store := database.NewStore(pool)
+	eventLimiter := middleware.NewProjectRateLimiter(
+		cfg.EventRateLimitPerMinute,
+		cfg.EventRateLimitBurst,
+	)
 	server := &http.Server{
 		Addr:              cfg.HTTPAddr,
-		Handler:           internal.NewRouter(store),
+		Handler:           internal.NewRouter(store, eventLimiter),
 		ReadHeaderTimeout: readHeaderTimeout,
 		ReadTimeout:       readTimeout,
 		WriteTimeout:      writeTimeout,

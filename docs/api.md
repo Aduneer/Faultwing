@@ -42,6 +42,11 @@ curl -X POST http://localhost:8080/api/v1/events \
   }'
 ```
 
+Event ingestion is limited per project to 60 events per minute with a burst of
+10 by default. A rejected request returns `429 Too Many Requests` with a
+`Retry-After` header. Set `EVENT_RATE_LIMIT_PER_MINUTE` and
+`EVENT_RATE_LIMIT_BURST` to positive integers to change these limits.
+
 ## Issues
 
 List issues for the API key's project, optionally filtered by status. The limit
