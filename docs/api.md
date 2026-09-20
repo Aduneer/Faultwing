@@ -44,10 +44,18 @@ curl -X POST http://localhost:8080/api/v1/events \
 
 ## Issues
 
-List issues for the API key's project, optionally filtered by status:
+List issues for the API key's project, optionally filtered by status. The limit
+defaults to 50 and cannot exceed 100:
 
 ```bash
-curl 'http://localhost:8080/api/v1/issues?status=open' \
+curl 'http://localhost:8080/api/v1/issues?status=open&limit=25' \
+  -H 'Authorization: Bearer fly_your_api_key'
+```
+
+When `next_cursor` is present, pass it unchanged to retrieve the next page:
+
+```bash
+curl 'http://localhost:8080/api/v1/issues?status=open&limit=25&cursor=NEXT_CURSOR' \
   -H 'Authorization: Bearer fly_your_api_key'
 ```
 

@@ -39,3 +39,19 @@ type IssueDetail struct {
 	Environments []string `json:"environments"`
 	Releases     []string `json:"releases"`
 }
+
+type IssueCursor struct {
+	LastSeen time.Time `json:"last_seen"`
+	ID       int64     `json:"id"`
+}
+
+type IssueListQuery struct {
+	Status IssueStatus
+	Limit  int
+	Cursor *IssueCursor
+}
+
+type IssuePage struct {
+	Issues  []Issue
+	HasMore bool
+}

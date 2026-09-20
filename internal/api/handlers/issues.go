@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"io"
@@ -13,8 +14,13 @@ import (
 	"github.com/Aduneer/FlyTrap/internal/models"
 )
 
+const (
+	defaultIssuePageSize = 50
+	maxIssuePageSize     = 100
+)
+
 type IssueStore interface {
-	ListIssues(context.Context, int64, models.IssueStatus) ([]models.Issue, error)
+	ListIssues(context.Context, int64, models.IssueListQuery) (models.IssuePage, error)
 	GetIssue(context.Context, int64, int64) (models.IssueDetail, error)
 	UpdateIssueStatus(context.Context, int64, int64, models.IssueStatus) (models.Issue, error)
 }
@@ -25,6 +31,11 @@ type IssueHandler struct {
 
 type updateIssueRequest struct {
 	Status models.IssueStatus `json:"status"`
+}
+
+type issueListResponse struct {
+	Issues     []models.Issue `json:"issues"`
+	NextCursor string         `json:"next_cursor,omitempty"`
 }
 
 func NewIssueHandler(store IssueStore) *IssueHandler {
@@ -72,13 +83,67 @@ func (h *IssueHandler) list(w http.ResponseWriter, r *http.Request, projectID in
 		return
 	}
 
-	issues, err := h.store.ListIssues(r.Context(), projectID, status)
+	limit := defaultIssuePageSize
+	if value := r.URL.Query().Get("limit"); value != "" {
+		parsed, err := strconv.Atoi(value)
+		if err != nil || parsed < 1 || parsed > maxIssuePageSize {
+			writeError(w, http.StatusBadRequest, "limit must be between 1 and 100")
+			return
+		}
+		limit = parsed
+	}
+
+	var cursor *models.IssueCursor
+	if value := r.URL.Query().Get("cursor"); value != "" {
+		parsed, err := decodeIssueCursor(value)
+		if err != nil {
+			writeError(w, http.StatusBadRequest, "cursor is invalid")
+			return
+		}
+		cursor = &parsed
+	}
+
+	page, err := h.store.ListIssues(r.Context(), projectID, models.IssueListQuery{
+		Status: status,
+		Limit:  limit,
+		Cursor: cursor,
+	})
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "could not load issues")
 		return
 	}
 
-	writeJSON(w, http.StatusOK, issues)
+	response := issueListResponse{Issues: page.Issues}
+	if page.HasMore && len(page.Issues) > 0 {
+		last := page.Issues[len(page.Issues)-1]
+		response.NextCursor = encodeIssueCursor(models.IssueCursor{
+			LastSeen: last.LastSeen,
+			ID:       last.ID,
+		})
+	}
+
+	writeJSON(w, http.StatusOK, response)
+}
+
+func encodeIssueCursor(cursor models.IssueCursor) string {
+	data, _ := json.Marshal(cursor)
+	return base64.RawURLEncoding.EncodeToString(data)
+}
+
+func decodeIssueCursor(value string) (models.IssueCursor, error) {
+	data, err := base64.RawURLEncoding.DecodeString(value)
+	if err != nil {
+		return models.IssueCursor{}, err
+	}
+
+	var cursor models.IssueCursor
+	if err := json.Unmarshal(data, &cursor); err != nil {
+		return models.IssueCursor{}, err
+	}
+	if cursor.ID < 1 || cursor.LastSeen.IsZero() {
+		return models.IssueCursor{}, errors.New("invalid cursor values")
+	}
+	return cursor, nil
 }
 
 func (h *IssueHandler) get(w http.ResponseWriter, r *http.Request, projectID, issueID int64) {

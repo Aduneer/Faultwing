@@ -8,34 +8,49 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-func (s *Store) ListIssues(ctx context.Context, projectID int64, status models.IssueStatus) ([]models.Issue, error) {
+func (s *Store) ListIssues(ctx context.Context, projectID int64, query models.IssueListQuery) (models.IssuePage, error) {
+	var cursorTime any
+	var cursorID int64
+	if query.Cursor != nil {
+		cursorTime = query.Cursor.LastSeen
+		cursorID = query.Cursor.ID
+	}
+
 	rows, err := s.pool.Query(ctx, `
 		SELECT id, project_id, fingerprint, exception_type, message, stacktrace,
 			status, event_count, first_seen, last_seen, resolved_at, created_at
 		FROM issues
 		WHERE project_id = $1
 		  AND ($2 = '' OR status = $2)
+		  AND ($3::timestamptz IS NULL OR (last_seen, id) < ($3, $4))
 		ORDER BY last_seen DESC, id DESC
-	`, projectID, string(status))
+		LIMIT $5
+	`, projectID, string(query.Status), cursorTime, cursorID, query.Limit+1)
 	if err != nil {
-		return nil, err
+		return models.IssuePage{}, err
 	}
 	defer rows.Close()
 
-	issues := make([]models.Issue, 0)
+	issues := make([]models.Issue, 0, query.Limit+1)
 	for rows.Next() {
 		var issue models.Issue
 		if err := scanIssue(rows, &issue); err != nil {
-			return nil, err
+			return models.IssuePage{}, err
 		}
 		issues = append(issues, issue)
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, err
+		return models.IssuePage{}, err
 	}
 
-	return issues, nil
+	page := models.IssuePage{Issues: issues}
+	if len(page.Issues) > query.Limit {
+		page.Issues = page.Issues[:query.Limit]
+		page.HasMore = true
+	}
+
+	return page, nil
 }
 
 func (s *Store) GetIssue(ctx context.Context, projectID, issueID int64) (models.IssueDetail, error) {

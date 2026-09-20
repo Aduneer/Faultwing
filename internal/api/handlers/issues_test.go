@@ -2,29 +2,31 @@ package handlers
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/Aduneer/FlyTrap/internal/middleware"
 	"github.com/Aduneer/FlyTrap/internal/models"
 )
 
 type fakeIssueStore struct {
-	issues    []models.Issue
+	page      models.IssuePage
 	detail    models.IssueDetail
 	err       error
 	projectID int64
 	issueID   int64
-	status    models.IssueStatus
+	query     models.IssueListQuery
 	updated   bool
 }
 
-func (s *fakeIssueStore) ListIssues(_ context.Context, projectID int64, status models.IssueStatus) ([]models.Issue, error) {
+func (s *fakeIssueStore) ListIssues(_ context.Context, projectID int64, query models.IssueListQuery) (models.IssuePage, error) {
 	s.projectID = projectID
-	s.status = status
-	return s.issues, s.err
+	s.query = query
+	return s.page, s.err
 }
 
 func (s *fakeIssueStore) GetIssue(_ context.Context, projectID, issueID int64) (models.IssueDetail, error) {
@@ -40,7 +42,7 @@ func (s *fakeIssueStore) UpdateIssueStatus(
 ) (models.Issue, error) {
 	s.projectID = projectID
 	s.issueID = issueID
-	s.status = status
+	s.query.Status = status
 	s.updated = true
 	return models.Issue{ID: issueID, ProjectID: projectID, Status: status}, s.err
 }
@@ -53,9 +55,13 @@ func authenticatedIssueHandler(store *fakeIssueStore) http.Handler {
 }
 
 func TestIssueHandlerListsAuthenticatedProjectIssues(t *testing.T) {
-	store := &fakeIssueStore{issues: []models.Issue{{ID: 7}}}
+	lastSeen := time.Date(2026, 9, 20, 12, 0, 0, 0, time.UTC)
+	store := &fakeIssueStore{page: models.IssuePage{
+		Issues:  []models.Issue{{ID: 7, LastSeen: lastSeen}},
+		HasMore: true,
+	}}
 	handler := authenticatedIssueHandler(store)
-	request := httptest.NewRequest(http.MethodGet, "/api/v1/issues?status=open", nil)
+	request := httptest.NewRequest(http.MethodGet, "/api/v1/issues?status=open&limit=1", nil)
 	request.Header.Set("Authorization", "Bearer fly_test-key")
 	response := httptest.NewRecorder()
 
@@ -64,8 +70,16 @@ func TestIssueHandlerListsAuthenticatedProjectIssues(t *testing.T) {
 	if response.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d", http.StatusOK, response.Code)
 	}
-	if store.projectID != 42 || store.status != models.IssueStatusOpen {
-		t.Fatalf("unexpected query scope: project=%d status=%q", store.projectID, store.status)
+	if store.projectID != 42 || store.query.Status != models.IssueStatusOpen || store.query.Limit != 1 {
+		t.Fatalf("unexpected query scope: project=%d query=%#v", store.projectID, store.query)
+	}
+
+	var result issueListResponse
+	if err := json.NewDecoder(response.Body).Decode(&result); err != nil {
+		t.Fatalf("decode response: %v", err)
+	}
+	if len(result.Issues) != 1 || result.NextCursor == "" {
+		t.Fatalf("expected one issue and a next cursor, got %#v", result)
 	}
 }
 
@@ -115,8 +129,8 @@ func TestIssueHandlerUpdatesStatus(t *testing.T) {
 	if response.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d", http.StatusOK, response.Code)
 	}
-	if store.projectID != 42 || store.issueID != 7 || store.status != models.IssueStatusResolved {
-		t.Fatalf("unexpected update: project=%d issue=%d status=%q", store.projectID, store.issueID, store.status)
+	if store.projectID != 42 || store.issueID != 7 || store.query.Status != models.IssueStatusResolved {
+		t.Fatalf("unexpected update: project=%d issue=%d status=%q", store.projectID, store.issueID, store.query.Status)
 	}
 }
 

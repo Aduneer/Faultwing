@@ -72,18 +72,18 @@ func TestMonitoringFlow(t *testing.T) {
 		t.Fatal("events from different projects should not share an issue")
 	}
 
-	issuesA, err := store.ListIssues(ctx, projectA.ID, "")
+	issuesA, err := store.ListIssues(ctx, projectA.ID, models.IssueListQuery{Limit: 10})
 	if err != nil {
 		t.Fatalf("list project A issues: %v", err)
 	}
-	issuesB, err := store.ListIssues(ctx, projectB.ID, "")
+	issuesB, err := store.ListIssues(ctx, projectB.ID, models.IssueListQuery{Limit: 10})
 	if err != nil {
 		t.Fatalf("list project B issues: %v", err)
 	}
-	if len(issuesA) != 1 || issuesA[0].EventCount != 2 {
+	if len(issuesA.Issues) != 1 || issuesA.Issues[0].EventCount != 2 {
 		t.Fatalf("expected project A count 2, got %#v", issuesA)
 	}
-	if len(issuesB) != 1 || issuesB[0].EventCount != 1 {
+	if len(issuesB.Issues) != 1 || issuesB.Issues[0].EventCount != 1 {
 		t.Fatalf("expected project B count 1, got %#v", issuesB)
 	}
 
@@ -108,6 +108,36 @@ func TestMonitoringFlow(t *testing.T) {
 	if len(detail.Environments) != 1 || detail.Environments[0] != "production" ||
 		len(detail.Releases) != 1 || detail.Releases[0] != "1.3.2" {
 		t.Fatalf("unexpected monitoring context: %#v", detail)
+	}
+
+	anotherEvent := event
+	anotherEvent.ExceptionType = "CacheMissError"
+	anotherEvent.Stacktrace = "cache/client.go:17"
+	if _, err := store.CreateEvent(ctx, projectA.ID, anotherEvent); err != nil {
+		t.Fatalf("create second issue: %v", err)
+	}
+
+	firstPage, err := store.ListIssues(ctx, projectA.ID, models.IssueListQuery{Limit: 1})
+	if err != nil {
+		t.Fatalf("load first issue page: %v", err)
+	}
+	if len(firstPage.Issues) != 1 || !firstPage.HasMore {
+		t.Fatalf("expected a full first page, got %#v", firstPage)
+	}
+
+	lastIssue := firstPage.Issues[0]
+	secondPage, err := store.ListIssues(ctx, projectA.ID, models.IssueListQuery{
+		Limit: 1,
+		Cursor: &models.IssueCursor{
+			LastSeen: lastIssue.LastSeen,
+			ID:       lastIssue.ID,
+		},
+	})
+	if err != nil {
+		t.Fatalf("load second issue page: %v", err)
+	}
+	if len(secondPage.Issues) != 1 || secondPage.HasMore || secondPage.Issues[0].ID == lastIssue.ID {
+		t.Fatalf("unexpected second page: %#v", secondPage)
 	}
 }
 
