@@ -10,6 +10,27 @@ curl http://localhost:8080/health
 curl http://localhost:8080/ready
 ```
 
+## User authentication
+
+Register a dashboard user, then log in to receive a seven-day session token:
+
+```bash
+curl -X POST http://localhost:8080/api/v1/auth/register \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"learner@example.com","password":"correct horse battery staple"}'
+
+curl -X POST http://localhost:8080/api/v1/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"learner@example.com","password":"correct horse battery staple"}'
+```
+
+Log out by revoking the returned token:
+
+```bash
+curl -X POST http://localhost:8080/api/v1/auth/logout \
+  -H 'Authorization: Bearer fly_session_your_session_token'
+```
+
 ## Projects
 
 Start PostgreSQL with `make db-up`, then start the API with `make run`.
