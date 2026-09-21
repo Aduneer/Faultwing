@@ -162,16 +162,16 @@ func NewRealtimeHandler(store RealtimeStore, hub *RealtimeHub) http.Handler {
 			connection: connection,
 			send:       make(chan []byte, realtimeSendBuffer),
 		}
-		if !hub.register(projectID, client) {
-			closeRealtimeConnection(connection, "server shutting down")
-			return
-		}
-		defer hub.unregister(projectID, client)
 		ready, _ := json.Marshal(realtimeReadyMessage{
 			Type:      "realtime.ready",
 			ProjectID: projectID,
 		})
 		client.send <- ready
+		if !hub.register(projectID, client) {
+			closeRealtimeConnection(connection, "server shutting down")
+			return
+		}
+		defer hub.unregister(projectID, client)
 
 		_ = connection.SetReadDeadline(time.Now().Add(realtimePongWait))
 		connection.SetPongHandler(func(string) error {
