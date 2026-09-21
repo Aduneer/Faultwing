@@ -151,6 +151,11 @@ func TestMonitoringFlow(t *testing.T) {
 	if job.ID == 0 || job.ProjectID != projectA.ID || job.Payload.Message != event.Message || job.CreatedAt.IsZero() {
 		t.Fatalf("unexpected queued event: %#v", job)
 	}
+	listener, err := store.OpenIssueUpdateListener(ctx)
+	if err != nil {
+		t.Fatalf("listen for issue updates: %v", err)
+	}
+	defer listener.Close()
 
 	processed, err := store.ProcessNextEventJob(ctx)
 	if err != nil {
@@ -165,6 +170,15 @@ func TestMonitoringFlow(t *testing.T) {
 	}
 	if processedIssue.EventCount != 4 {
 		t.Fatalf("expected queued event to increment issue count, got %d", processedIssue.EventCount)
+	}
+	notificationCtx, cancelNotification := context.WithTimeout(ctx, 2*time.Second)
+	defer cancelNotification()
+	update, err := listener.Wait(notificationCtx)
+	if err != nil {
+		t.Fatalf("wait for issue update: %v", err)
+	}
+	if update.Type != models.IssueUpdateType || update.ProjectID != projectA.ID || update.IssueID != first.IssueID {
+		t.Fatalf("unexpected issue update: %#v", update)
 	}
 
 	processed, err = store.ProcessNextEventJob(ctx)

@@ -87,7 +87,19 @@ func (s *Store) ProcessNextEventJob(ctx context.Context) (bool, error) {
 		return true, err
 	}
 
-	_, processingErr := createEvent(ctx, processingTx, job.ProjectID, job.Payload)
+	event, processingErr := createEvent(ctx, processingTx, job.ProjectID, job.Payload)
+	if processingErr == nil {
+		_, processingErr = processingTx.Exec(ctx, `
+			SELECT pg_notify(
+				'flytrap_issue_updates',
+				json_build_object(
+					'type', 'issue.updated',
+					'project_id', $1::bigint,
+					'issue_id', $2::bigint
+				)::text
+			)
+		`, job.ProjectID, event.IssueID)
+	}
 	if processingErr == nil {
 		_, processingErr = processingTx.Exec(ctx, `DELETE FROM event_jobs WHERE id = $1`, job.ID)
 	}

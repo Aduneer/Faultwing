@@ -55,3 +55,11 @@ type IssuePage struct {
 	Issues  []Issue
 	HasMore bool
 }
+
+const IssueUpdateType = "issue.updated"
+
+type IssueUpdate struct {
+	Type      string `json:"type"`
+	ProjectID int64  `json:"project_id"`
+	IssueID   int64  `json:"issue_id"`
+}
