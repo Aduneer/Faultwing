@@ -136,3 +136,31 @@ curl -X PATCH http://localhost:8080/api/v1/issues/1 \
   -H 'Content-Type: application/json' \
   -d '{"status":"resolved"}'
 ```
+
+## Realtime issue updates
+
+Dashboard clients can subscribe to updates for an owned project at
+`ws://localhost:8080/api/v1/projects/1/realtime`. Because browser WebSocket
+connections cannot set an `Authorization` header, send the session token as
+the first message within five seconds:
+
+```json
+{"token":"fly_session_your_session_token"}
+```
+
+After the session and project ownership are verified, the server confirms that
+the subscription is ready:
+
+```json
+{"type":"realtime.ready","project_id":1}
+```
+
+Creating or updating an issue then produces a project-scoped notification:
+
+```json
+{"type":"issue.updated","project_id":1,"issue_id":7}
+```
+
+Treat this notification as a signal to refetch the affected issue or issue
+list. PostgreSQL notifications are intentionally lightweight and are not a
+durable event history, so clients should also refetch after reconnecting.

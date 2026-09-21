@@ -3,6 +3,7 @@ module github.com/Aduneer/FlyTrap
 go 1.27.1
 
 require (
+	github.com/gorilla/websocket v1.5.3
 	github.com/jackc/pgx/v5 v5.9.2
 	golang.org/x/crypto v0.55.0
 )

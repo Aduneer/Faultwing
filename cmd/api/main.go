@@ -18,11 +18,12 @@ import (
 )
 
 const (
-	readHeaderTimeout = 5 * time.Second
-	readTimeout       = 15 * time.Second
-	writeTimeout      = 30 * time.Second
-	idleTimeout       = 60 * time.Second
-	shutdownTimeout   = 10 * time.Second
+	readHeaderTimeout  = 5 * time.Second
+	readTimeout        = 15 * time.Second
+	writeTimeout       = 30 * time.Second
+	idleTimeout        = 60 * time.Second
+	shutdownTimeout    = 10 * time.Second
+	listenerRetryDelay = time.Second
 )
 
 func main() {
@@ -47,13 +48,16 @@ func run() error {
 	defer pool.Close()
 
 	store := database.NewStore(pool)
+	realtimeHub := internal.NewRealtimeHub()
+	defer realtimeHub.Close()
+	go forwardIssueUpdates(ctx, store, realtimeHub)
 	eventLimiter := middleware.NewProjectRateLimiter(
 		cfg.EventRateLimitPerMinute,
 		cfg.EventRateLimitBurst,
 	)
 	server := &http.Server{
 		Addr:              cfg.HTTPAddr,
-		Handler:           internal.NewRouter(store, eventLimiter),
+		Handler:           internal.NewRouter(store, eventLimiter, realtimeHub),
 		ReadHeaderTimeout: readHeaderTimeout,
 		ReadTimeout:       readTimeout,
 		WriteTimeout:      writeTimeout,
@@ -74,6 +78,7 @@ func run() error {
 		return nil
 	case <-ctx.Done():
 		stop()
+		realtimeHub.Close()
 		log.Println("shutdown signal received")
 	}
 
@@ -90,4 +95,35 @@ func run() error {
 
 	log.Println("shutdown complete")
 	return nil
+}
+
+func forwardIssueUpdates(ctx context.Context, store *database.Store, hub *internal.RealtimeHub) {
+	for ctx.Err() == nil {
+		listener, err := store.OpenIssueUpdateListener(ctx)
+		if err == nil {
+			for ctx.Err() == nil {
+				update, waitErr := listener.Wait(ctx)
+				if waitErr != nil {
+					err = waitErr
+					break
+				}
+				hub.Publish(update)
+			}
+			if closeErr := listener.Close(); err == nil {
+				err = closeErr
+			}
+		}
+		if ctx.Err() != nil {
+			return
+		}
+		log.Printf("issue update listener: %v", err)
+
+		timer := time.NewTimer(listenerRetryDelay)
+		select {
+		case <-timer.C:
+		case <-ctx.Done():
+			timer.Stop()
+			return
+		}
+	}
 }

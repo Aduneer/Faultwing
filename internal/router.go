@@ -18,7 +18,7 @@ type Store interface {
 	middleware.UserSessionAuthenticator
 }
 
-func NewRouter(store Store, eventLimiter *middleware.ProjectRateLimiter) http.Handler {
+func NewRouter(store Store, eventLimiter *middleware.ProjectRateLimiter, realtimeHub *RealtimeHub) http.Handler {
 	mux := http.NewServeMux()
 	mux.Handle("/health", handlers.NewHealthHandler())
 	mux.Handle("/ready", handlers.NewReadinessHandler(store))
@@ -38,6 +38,7 @@ func NewRouter(store Store, eventLimiter *middleware.ProjectRateLimiter) http.Ha
 	)
 	mux.Handle("/api/v1/projects/{projectID}/issues", dashboardIssues)
 	mux.Handle("/api/v1/projects/{projectID}/issues/{issueID}", dashboardIssues)
+	mux.Handle("/api/v1/projects/{projectID}/realtime", NewRealtimeHandler(store, realtimeHub))
 
 	return mux
 }
