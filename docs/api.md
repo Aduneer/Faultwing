@@ -27,7 +27,8 @@ submitting events.
 
 ## Events
 
-Create an event using the project's API key:
+Start the background worker in another terminal with `make run-worker`, then
+create an event using the project's API key:
 
 ```bash
 curl -X POST http://localhost:8080/api/v1/events \

@@ -1,7 +1,10 @@
-.PHONY: run db-up db-down test test-integration test-python generate-errors
+.PHONY: run run-worker db-up db-down test test-integration test-python generate-errors
 
 run:
 	go run ./cmd/api
+
+run-worker:
+	go run ./cmd/worker
 
 db-up:
 	docker compose up -d db
