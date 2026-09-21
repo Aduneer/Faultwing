@@ -25,7 +25,7 @@ func NewRouter(store Store, eventLimiter *middleware.ProjectRateLimiter) http.Ha
 	mux.HandleFunc("/api/v1/auth/register", authHandler.Register)
 	mux.HandleFunc("/api/v1/auth/login", authHandler.Login)
 	mux.Handle("/api/v1/auth/logout", middleware.RequireUserSession(store, http.HandlerFunc(authHandler.Logout)))
-	mux.Handle("/api/v1/projects", handlers.NewProjectHandler(store))
+	mux.Handle("/api/v1/projects", middleware.RequireUserSession(store, handlers.NewProjectHandler(store)))
 	eventHandler := middleware.RateLimitByProject(eventLimiter, handlers.NewEventHandler(store))
 	mux.Handle("/api/v1/events", middleware.RequireAPIKey(store, eventHandler))
 	issueHandler := middleware.RequireAPIKey(store, handlers.NewIssueHandler(store))

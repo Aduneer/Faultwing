@@ -10,7 +10,7 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
-func (s *Store) CreateProject(ctx context.Context, name string) (models.Project, string, error) {
+func (s *Store) CreateProject(ctx context.Context, ownerID int64, name string) (models.Project, string, error) {
 	key, err := apikey.Generate()
 	if err != nil {
 		return models.Project{}, "", fmt.Errorf("generate API key: %w", err)
@@ -25,10 +25,10 @@ func (s *Store) CreateProject(ctx context.Context, name string) (models.Project,
 
 	var project models.Project
 	err = tx.QueryRow(ctx, `
-		INSERT INTO projects (name)
-		VALUES ($1)
-		RETURNING id, name, created_at
-	`, name).Scan(&project.ID, &project.Name, &project.CreatedAt)
+		INSERT INTO projects (owner_id, name)
+		VALUES ($1, $2)
+		RETURNING id, owner_id, name, created_at
+	`, ownerID, name).Scan(&project.ID, &project.OwnerID, &project.Name, &project.CreatedAt)
 	if err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
@@ -49,4 +49,31 @@ func (s *Store) CreateProject(ctx context.Context, name string) (models.Project,
 	}
 
 	return project, key, nil
+}
+
+func (s *Store) ListProjects(ctx context.Context, ownerID int64) ([]models.Project, error) {
+	rows, err := s.pool.Query(ctx, `
+		SELECT id, owner_id, name, created_at
+		FROM projects
+		WHERE owner_id = $1
+		ORDER BY created_at DESC, id DESC
+	`, ownerID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	projects := make([]models.Project, 0)
+	for rows.Next() {
+		var project models.Project
+		if err := rows.Scan(&project.ID, &project.OwnerID, &project.Name, &project.CreatedAt); err != nil {
+			return nil, err
+		}
+		projects = append(projects, project)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return projects, nil
 }

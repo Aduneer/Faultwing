@@ -22,12 +22,16 @@ func TestMonitoringFlow(t *testing.T) {
 	defer cancel()
 
 	store := newIntegrationStore(t, ctx, databaseURL)
+	owner, err := store.CreateUser(ctx, "monitoring@example.com", "test-password-hash")
+	if err != nil {
+		t.Fatalf("create project owner: %v", err)
+	}
 
-	projectA, keyA, err := store.CreateProject(ctx, "Project A")
+	projectA, keyA, err := store.CreateProject(ctx, owner.ID, "Project A")
 	if err != nil {
 		t.Fatalf("create project A: %v", err)
 	}
-	projectB, keyB, err := store.CreateProject(ctx, "Project B")
+	projectB, keyB, err := store.CreateProject(ctx, owner.ID, "Project B")
 	if err != nil {
 		t.Fatalf("create project B: %v", err)
 	}

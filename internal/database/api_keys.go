@@ -14,12 +14,12 @@ func (s *Store) AuthenticateProject(ctx context.Context, key string) (models.Pro
 
 	var project models.Project
 	err := s.pool.QueryRow(ctx, `
-		SELECT projects.id, projects.name, projects.created_at
+		SELECT projects.id, projects.owner_id, projects.name, projects.created_at
 		FROM api_keys
 		JOIN projects ON projects.id = api_keys.project_id
 		WHERE api_keys.key_hash = $1
 		  AND api_keys.revoked_at IS NULL
-	`, keyHash[:]).Scan(&project.ID, &project.Name, &project.CreatedAt)
+	`, keyHash[:]).Scan(&project.ID, &project.OwnerID, &project.Name, &project.CreatedAt)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return models.Project{}, apikey.ErrInvalid
 	}

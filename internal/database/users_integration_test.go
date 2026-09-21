@@ -55,4 +55,24 @@ func TestUserSessionFlow(t *testing.T) {
 	if _, _, err := store.AuthenticateSession(ctx, tokenHash); !errors.Is(err, models.ErrInvalidSession) {
 		t.Fatalf("expected revoked session to be rejected, got %v", err)
 	}
+
+	project, _, err := store.CreateProject(ctx, user.ID, "My App")
+	if err != nil {
+		t.Fatalf("create owned project: %v", err)
+	}
+	otherUser, err := store.CreateUser(ctx, "other@example.com", "test-password-hash")
+	if err != nil {
+		t.Fatalf("create other user: %v", err)
+	}
+	otherProject, _, err := store.CreateProject(ctx, otherUser.ID, "my app")
+	if err != nil {
+		t.Fatalf("reuse project name for another owner: %v", err)
+	}
+	projects, err := store.ListProjects(ctx, user.ID)
+	if err != nil {
+		t.Fatalf("list owned projects: %v", err)
+	}
+	if len(projects) != 1 || projects[0].ID != project.ID || projects[0].OwnerID != user.ID || otherProject.OwnerID != otherUser.ID {
+		t.Fatalf("projects were not scoped to their owners: projects=%#v other=%#v", projects, otherProject)
+	}
 }

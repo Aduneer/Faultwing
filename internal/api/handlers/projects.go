@@ -9,13 +9,15 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"github.com/Aduneer/FlyTrap/internal/middleware"
 	"github.com/Aduneer/FlyTrap/internal/models"
 )
 
 const maxProjectRequestSize = 1 << 20
 
 type ProjectStore interface {
-	CreateProject(context.Context, string) (models.Project, string, error)
+	CreateProject(context.Context, int64, string) (models.Project, string, error)
+	ListProjects(context.Context, int64) ([]models.Project, error)
 }
 
 type ProjectHandler struct {
@@ -36,16 +38,24 @@ func NewProjectHandler(store ProjectStore) *ProjectHandler {
 }
 
 func (h *ProjectHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		w.Header().Set("Allow", "POST")
+	switch r.Method {
+	case http.MethodGet:
+		h.list(w, r)
+	case http.MethodPost:
+		h.create(w, r)
+	default:
+		w.Header().Set("Allow", "GET, POST")
 		writeError(w, http.StatusMethodNotAllowed, "method not allowed")
-		return
 	}
-
-	h.create(w, r)
 }
 
 func (h *ProjectHandler) create(w http.ResponseWriter, r *http.Request) {
+	user, ok := middleware.UserFromContext(r.Context())
+	if !ok {
+		writeError(w, http.StatusInternalServerError, "authenticated user is missing")
+		return
+	}
+
 	r.Body = http.MaxBytesReader(w, r.Body, maxProjectRequestSize)
 	defer r.Body.Close()
 
@@ -72,7 +82,7 @@ func (h *ProjectHandler) create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	project, key, err := h.store.CreateProject(r.Context(), name)
+	project, key, err := h.store.CreateProject(r.Context(), user.ID, name)
 	if err != nil {
 		if errors.Is(err, models.ErrProjectNameTaken) {
 			writeError(w, http.StatusConflict, err.Error())
@@ -86,4 +96,20 @@ func (h *ProjectHandler) create(w http.ResponseWriter, r *http.Request) {
 		Project: project,
 		APIKey:  key,
 	})
+}
+
+func (h *ProjectHandler) list(w http.ResponseWriter, r *http.Request) {
+	user, ok := middleware.UserFromContext(r.Context())
+	if !ok {
+		writeError(w, http.StatusInternalServerError, "authenticated user is missing")
+		return
+	}
+
+	projects, err := h.store.ListProjects(r.Context(), user.ID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, "could not load projects")
+		return
+	}
+
+	writeJSON(w, http.StatusOK, projects)
 }
