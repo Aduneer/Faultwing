@@ -5,8 +5,13 @@ import (
 
 	"github.com/Aduneer/FlyTrap/internal/fingerprint"
 	"github.com/Aduneer/FlyTrap/internal/models"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
+
+type eventQuerier interface {
+	QueryRow(context.Context, string, ...any) pgx.Row
+}
 
 type Store struct {
 	pool *pgxpool.Pool
@@ -23,9 +28,27 @@ func (s *Store) CreateEvent(ctx context.Context, projectID int64, input models.C
 	}
 	defer tx.Rollback(ctx)
 
+	event, err := createEvent(ctx, tx, projectID, input)
+	if err != nil {
+		return models.Event{}, err
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return models.Event{}, err
+	}
+
+	return event, nil
+}
+
+func createEvent(
+	ctx context.Context,
+	db eventQuerier,
+	projectID int64,
+	input models.CreateEventRequest,
+) (models.Event, error) {
 	issueFingerprint := fingerprint.Event(input.ExceptionType, input.Stacktrace)
 	var issueID int64
-	err = tx.QueryRow(ctx, `
+	err := db.QueryRow(ctx, `
 		INSERT INTO issues (project_id, fingerprint, exception_type, message, stacktrace, event_count)
 		VALUES ($1, $2, $3, $4, $5, 1)
 		ON CONFLICT (project_id, fingerprint) DO UPDATE
@@ -50,7 +73,7 @@ func (s *Store) CreateEvent(ctx context.Context, projectID int64, input models.C
 
 	var event models.Event
 
-	err = tx.QueryRow(ctx, `
+	err = db.QueryRow(ctx, `
 		INSERT INTO events (issue_id, exception_type, message, stacktrace, environment, release)
 		VALUES ($1, $2, $3, $4, $5, $6)
 		RETURNING id, issue_id, exception_type, message, stacktrace, environment, release, created_at
@@ -65,10 +88,6 @@ func (s *Store) CreateEvent(ctx context.Context, projectID int64, input models.C
 		&event.CreatedAt,
 	)
 	if err != nil {
-		return models.Event{}, err
-	}
-
-	if err := tx.Commit(ctx); err != nil {
 		return models.Event{}, err
 	}
 

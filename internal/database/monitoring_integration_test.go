@@ -147,6 +147,29 @@ func TestMonitoringFlow(t *testing.T) {
 	if job.ID == 0 || job.ProjectID != projectA.ID || job.Payload.Message != event.Message || job.CreatedAt.IsZero() {
 		t.Fatalf("unexpected queued event: %#v", job)
 	}
+
+	processed, err := store.ProcessNextEventJob(ctx)
+	if err != nil {
+		t.Fatalf("process queued event: %v", err)
+	}
+	if !processed {
+		t.Fatal("expected a queued event to be processed")
+	}
+	processedIssue, err := store.GetIssue(ctx, projectA.ID, first.IssueID)
+	if err != nil {
+		t.Fatalf("load issue after queued event: %v", err)
+	}
+	if processedIssue.EventCount != 4 {
+		t.Fatalf("expected queued event to increment issue count, got %d", processedIssue.EventCount)
+	}
+
+	processed, err = store.ProcessNextEventJob(ctx)
+	if err != nil {
+		t.Fatalf("check empty event queue: %v", err)
+	}
+	if processed {
+		t.Fatal("expected event queue to be empty")
+	}
 }
 
 func newIntegrationStore(t *testing.T, ctx context.Context, databaseURL string) *Store {
