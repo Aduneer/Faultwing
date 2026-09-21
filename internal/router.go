@@ -14,6 +14,7 @@ type Store interface {
 	handlers.IssueStore
 	handlers.ProjectStore
 	middleware.APIKeyAuthenticator
+	middleware.ProjectOwnerStore
 	middleware.UserSessionAuthenticator
 }
 
@@ -31,6 +32,12 @@ func NewRouter(store Store, eventLimiter *middleware.ProjectRateLimiter) http.Ha
 	issueHandler := middleware.RequireAPIKey(store, handlers.NewIssueHandler(store))
 	mux.Handle("/api/v1/issues", issueHandler)
 	mux.Handle("/api/v1/issues/", issueHandler)
+	dashboardIssues := middleware.RequireUserSession(
+		store,
+		middleware.RequireOwnedProject(store, handlers.NewIssueHandler(store)),
+	)
+	mux.Handle("/api/v1/projects/{projectID}/issues", dashboardIssues)
+	mux.Handle("/api/v1/projects/{projectID}/issues/{issueID}", dashboardIssues)
 
 	return mux
 }

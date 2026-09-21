@@ -88,15 +88,33 @@ Event ingestion is limited per project to 60 events per minute with a burst of
 
 ## Issues
 
-List issues for the API key's project, optionally filtered by status. The limit
-defaults to 50 and cannot exceed 100:
+Dashboard users access issues through an owned project. Listing supports the
+same status filter and cursor pagination; the limit defaults to 50 and cannot
+exceed 100:
+
+```bash
+curl 'http://localhost:8080/api/v1/projects/1/issues?status=open&limit=25' \
+  -H 'Authorization: Bearer fly_session_your_session_token'
+
+curl http://localhost:8080/api/v1/projects/1/issues/7 \
+  -H 'Authorization: Bearer fly_session_your_session_token'
+
+curl -X PATCH http://localhost:8080/api/v1/projects/1/issues/7 \
+  -H 'Authorization: Bearer fly_session_your_session_token' \
+  -H 'Content-Type: application/json' \
+  -d '{"status":"resolved"}'
+```
+
+The original API-key-scoped routes remain available. List issues for the API
+key's project:
 
 ```bash
 curl 'http://localhost:8080/api/v1/issues?status=open&limit=25' \
   -H 'Authorization: Bearer fly_your_api_key'
 ```
 
-When `next_cursor` is present, pass it unchanged to retrieve the next page:
+When `next_cursor` is present, pass it unchanged to retrieve the next API-key
+page:
 
 ```bash
 curl 'http://localhost:8080/api/v1/issues?status=open&limit=25&cursor=NEXT_CURSOR' \

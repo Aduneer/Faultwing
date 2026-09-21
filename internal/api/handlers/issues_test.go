@@ -11,6 +11,7 @@ import (
 
 	"github.com/Aduneer/FlyTrap/internal/middleware"
 	"github.com/Aduneer/FlyTrap/internal/models"
+	"github.com/Aduneer/FlyTrap/internal/userauth"
 )
 
 type fakeIssueStore struct {
@@ -52,6 +53,52 @@ func authenticatedIssueHandler(store *fakeIssueStore) http.Handler {
 		project: models.Project{ID: 42, Name: "My App"},
 	}
 	return middleware.RequireAPIKey(authenticator, NewIssueHandler(store))
+}
+
+type dashboardIssueAccess struct {
+	user    models.User
+	project models.Project
+}
+
+func (a dashboardIssueAccess) AuthenticateSession(context.Context, [32]byte) (models.User, models.Session, error) {
+	return a.user, models.Session{ID: 1, UserID: a.user.ID}, nil
+}
+
+func (a dashboardIssueAccess) GetProjectForOwner(_ context.Context, ownerID, projectID int64) (models.Project, error) {
+	if a.project.OwnerID != ownerID || a.project.ID != projectID {
+		return models.Project{}, models.ErrProjectNotFound
+	}
+	return a.project, nil
+}
+
+func TestIssueHandlerGetsIssueForProjectOwner(t *testing.T) {
+	store := &fakeIssueStore{detail: models.IssueDetail{Issue: models.Issue{ID: 7, ProjectID: 42}}}
+	access := dashboardIssueAccess{
+		user:    models.User{ID: 5},
+		project: models.Project{ID: 42, OwnerID: 5, Name: "My App"},
+	}
+	token, _, err := userauth.GenerateSessionToken()
+	if err != nil {
+		t.Fatalf("generate session token: %v", err)
+	}
+	dashboardHandler := middleware.RequireUserSession(
+		access,
+		middleware.RequireOwnedProject(access, NewIssueHandler(store)),
+	)
+	mux := http.NewServeMux()
+	mux.Handle("/api/v1/projects/{projectID}/issues/{issueID}", dashboardHandler)
+	request := httptest.NewRequest(http.MethodGet, "/api/v1/projects/42/issues/7", nil)
+	request.Header.Set("Authorization", "Bearer "+token)
+	response := httptest.NewRecorder()
+
+	mux.ServeHTTP(response, request)
+
+	if response.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d", http.StatusOK, response.Code)
+	}
+	if store.projectID != 42 || store.issueID != 7 {
+		t.Fatalf("unexpected dashboard issue scope: project=%d issue=%d", store.projectID, store.issueID)
+	}
 }
 
 func TestIssueHandlerListsAuthenticatedProjectIssues(t *testing.T) {

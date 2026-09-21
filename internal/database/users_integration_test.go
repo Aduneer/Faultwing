@@ -75,4 +75,11 @@ func TestUserSessionFlow(t *testing.T) {
 	if len(projects) != 1 || projects[0].ID != project.ID || projects[0].OwnerID != user.ID || otherProject.OwnerID != otherUser.ID {
 		t.Fatalf("projects were not scoped to their owners: projects=%#v other=%#v", projects, otherProject)
 	}
+	ownedProject, err := store.GetProjectForOwner(ctx, user.ID, project.ID)
+	if err != nil || ownedProject.ID != project.ID {
+		t.Fatalf("load owned project: project=%#v err=%v", ownedProject, err)
+	}
+	if _, err := store.GetProjectForOwner(ctx, otherUser.ID, project.ID); !errors.Is(err, models.ErrProjectNotFound) {
+		t.Fatalf("expected another user's project to be hidden, got %v", err)
+	}
 }

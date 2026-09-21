@@ -7,6 +7,7 @@ import (
 
 	"github.com/Aduneer/FlyTrap/internal/apikey"
 	"github.com/Aduneer/FlyTrap/internal/models"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
@@ -76,4 +77,26 @@ func (s *Store) ListProjects(ctx context.Context, ownerID int64) ([]models.Proje
 	}
 
 	return projects, nil
+}
+
+func (s *Store) GetProjectForOwner(ctx context.Context, ownerID, projectID int64) (models.Project, error) {
+	var project models.Project
+	err := s.pool.QueryRow(ctx, `
+		SELECT id, owner_id, name, created_at
+		FROM projects
+		WHERE owner_id = $1 AND id = $2
+	`, ownerID, projectID).Scan(
+		&project.ID,
+		&project.OwnerID,
+		&project.Name,
+		&project.CreatedAt,
+	)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return models.Project{}, models.ErrProjectNotFound
+	}
+	if err != nil {
+		return models.Project{}, err
+	}
+
+	return project, nil
 }

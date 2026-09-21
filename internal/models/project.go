@@ -5,7 +5,10 @@ import (
 	"time"
 )
 
-var ErrProjectNameTaken = errors.New("project name is already in use")
+var (
+	ErrProjectNameTaken = errors.New("project name is already in use")
+	ErrProjectNotFound  = errors.New("project not found")
+)
 
 type Project struct {
 	ID        int64     `json:"id"`

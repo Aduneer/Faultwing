@@ -49,9 +49,11 @@ func (h *IssueHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	path := strings.TrimPrefix(r.URL.Path, "/api/v1/issues")
-	path = strings.Trim(path, "/")
-	if path == "" {
+	issueIDValue := r.PathValue("issueID")
+	if issueIDValue == "" && strings.HasPrefix(r.URL.Path, "/api/v1/issues") {
+		issueIDValue = strings.Trim(strings.TrimPrefix(r.URL.Path, "/api/v1/issues"), "/")
+	}
+	if issueIDValue == "" {
 		if r.Method != http.MethodGet {
 			methodNotAllowed(w, "GET")
 			return
@@ -60,7 +62,7 @@ func (h *IssueHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	issueID, err := strconv.ParseInt(path, 10, 64)
+	issueID, err := strconv.ParseInt(issueIDValue, 10, 64)
 	if err != nil || issueID < 1 {
 		writeError(w, http.StatusNotFound, "issue not found")
 		return
