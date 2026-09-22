@@ -1,4 +1,4 @@
-.PHONY: run run-worker db-up db-down test test-integration test-python generate-errors
+.PHONY: run run-worker db-up db-down test test-integration test-python generate-errors frontend-install frontend-dev frontend-build frontend-test
 
 run:
 	go run ./cmd/api
@@ -24,3 +24,15 @@ test-python:
 
 generate-errors:
 	PYTHONPATH=sdk/python python3 scripts/generate-errors.py $(ARGS)
+
+frontend-install:
+	npm --prefix web install
+
+frontend-dev:
+	npm --prefix web run dev
+
+frontend-build:
+	npm --prefix web run build
+
+frontend-test:
+	npm --prefix web run test:e2e

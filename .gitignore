@@ -14,8 +14,14 @@ __pycache__/
 .venv/
 build/
 dist/
+web/node_modules/
+web/dist/
+web/test-results/
+web/src/public/
+web/src/**/*.bak
+/frontend_mockup.png
 *.egg-info/
 
 # Temporarily ignored (WIP) - will be added later
-README.md
-Structure.md
+/README.md
+/Structure.md
