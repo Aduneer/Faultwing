@@ -21,7 +21,3 @@ web/src/public/
 web/src/**/*.bak
 /frontend_mockup.png
 *.egg-info/
-
-# Temporarily ignored (WIP) - will be added later
-/README.md
-/Structure.md

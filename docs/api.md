@@ -1,5 +1,18 @@
 # API
 
+The API listens on `http://localhost:8080` by default and returns JSON unless a
+successful endpoint has no response body.
+
+FlyTrap has two bearer-token types:
+
+- `fly_session_...` authenticates a dashboard user and expires after seven
+  days. Use it for projects and user-scoped issue routes.
+- `fly_...` authenticates one project. Use it for event ingestion and the
+  API-key-scoped issue routes.
+
+API and session tokens are secrets. The examples below contain placeholders,
+not working credentials.
+
 ## Service health
 
 `GET /health` reports that the API process is running. `GET /ready` also checks
@@ -12,30 +25,47 @@ curl http://localhost:8080/ready
 
 ## User authentication
 
-Register a dashboard user, then log in to receive a seven-day session token:
+Register a dashboard user:
 
 ```bash
 curl -X POST http://localhost:8080/api/v1/auth/register \
   -H 'Content-Type: application/json' \
   -d '{"email":"learner@example.com","password":"correct horse battery staple"}'
+```
 
+Registration creates the user but does not create a session. Log in separately
+to receive a seven-day token:
+
+```bash
 curl -X POST http://localhost:8080/api/v1/auth/login \
   -H 'Content-Type: application/json' \
   -d '{"email":"learner@example.com","password":"correct horse battery staple"}'
 ```
 
-Log out by revoking the returned token:
+```json
+{
+  "user": {
+    "id": 1,
+    "email": "learner@example.com",
+    "created_at": "2026-09-22T12:00:00Z"
+  },
+  "token": "fly_session_your_session_token",
+  "expires_at": "2026-09-29T12:00:00Z"
+}
+```
+
+Log out by revoking the session token:
 
 ```bash
 curl -X POST http://localhost:8080/api/v1/auth/logout \
   -H 'Authorization: Bearer fly_session_your_session_token'
 ```
 
+A successful logout returns `204 No Content`.
+
 ## Projects
 
-Start PostgreSQL with `make db-up`, then start the API with `make run`.
-
-Create a project using the session token returned by login:
+Create a project using a session token:
 
 ```bash
 curl -X POST http://localhost:8080/api/v1/projects \
@@ -44,8 +74,20 @@ curl -X POST http://localhost:8080/api/v1/projects \
   -d '{"name":"My App"}'
 ```
 
-The response contains an API key. It is only returned once, so copy it before
-submitting events.
+The response contains the new project and its API key. The plaintext key is
+only returned by this request, so copy it before navigating away.
+
+```json
+{
+  "project": {
+    "id": 1,
+    "owner_id": 1,
+    "name": "My App",
+    "created_at": "2026-09-22T12:05:00Z"
+  },
+  "api_key": "fly_your_api_key"
+}
+```
 
 List the signed-in user's projects:
 
@@ -54,10 +96,13 @@ curl http://localhost:8080/api/v1/projects \
   -H 'Authorization: Bearer fly_session_your_session_token'
 ```
 
+API-key rotation and revocation endpoints are not implemented yet. Create a
+new project if you need a different key during local development.
+
 ## Events
 
-Start the background worker in another terminal with `make run-worker`, then
-create an event using the project's API key:
+Start the worker with `make run-worker`, then submit an event using the
+project's API key:
 
 ```bash
 curl -X POST http://localhost:8080/api/v1/events \
@@ -72,25 +117,26 @@ curl -X POST http://localhost:8080/api/v1/events \
   }'
 ```
 
-Accepted events return `202 Accepted` with a queue receipt:
+`exception_type`, `message`, and `environment` are required. `stacktrace` and
+`release` may be empty. Accepted events return `202 Accepted` with the durable
+job's receipt:
 
 ```json
 {
   "job_id": 1,
-  "queued_at": "2026-09-20T12:00:00Z"
+  "queued_at": "2026-09-22T12:06:00Z"
 }
 ```
 
-Event ingestion is limited per project to 60 events per minute with a burst of
-10 by default. A rejected request returns `429 Too Many Requests` with a
+Ingestion is limited per project to 60 events per minute with a burst of 10 by
+default. A rejected request returns `429 Too Many Requests` with a
 `Retry-After` header. Set `EVENT_RATE_LIMIT_PER_MINUTE` and
 `EVENT_RATE_LIMIT_BURST` to positive integers to change these limits.
 
 ## Issues
 
-Dashboard users access issues through an owned project. Listing supports the
-same status filter and cursor pagination; the limit defaults to 50 and cannot
-exceed 100:
+The dashboard uses user-scoped routes and verifies that the signed-in user
+owns the project:
 
 ```bash
 curl 'http://localhost:8080/api/v1/projects/1/issues?status=open&limit=25' \
@@ -105,41 +151,47 @@ curl -X PATCH http://localhost:8080/api/v1/projects/1/issues/7 \
   -d '{"status":"resolved"}'
 ```
 
-The original API-key-scoped routes remain available. List issues for the API
-key's project:
+The project API key can access equivalent routes without a project ID:
 
 ```bash
 curl 'http://localhost:8080/api/v1/issues?status=open&limit=25' \
   -H 'Authorization: Bearer fly_your_api_key'
+
+curl http://localhost:8080/api/v1/issues/7 \
+  -H 'Authorization: Bearer fly_your_api_key'
 ```
 
-When `next_cursor` is present, pass it unchanged to retrieve the next API-key
-page:
+`status` may be `open`, `resolved`, or `ignored`. The page limit defaults to 50
+and must be between 1 and 100. List responses have this shape:
+
+```json
+{
+  "issues": [],
+  "next_cursor": "opaque-value-for-the-next-page"
+}
+```
+
+When `next_cursor` is present, pass it back unchanged:
 
 ```bash
 curl 'http://localhost:8080/api/v1/issues?status=open&limit=25&cursor=NEXT_CURSOR' \
   -H 'Authorization: Bearer fly_your_api_key'
 ```
 
-Get an issue with its affected environments and releases:
+Issue detail responses also include distinct `environments` and `releases`
+observed for that issue. Update an issue with `PATCH` and one of the three
+supported states:
 
 ```bash
-curl http://localhost:8080/api/v1/issues/1 \
-  -H 'Authorization: Bearer fly_your_api_key'
-```
-
-Resolve, reopen, or ignore an issue:
-
-```bash
-curl -X PATCH http://localhost:8080/api/v1/issues/1 \
+curl -X PATCH http://localhost:8080/api/v1/issues/7 \
   -H 'Authorization: Bearer fly_your_api_key' \
   -H 'Content-Type: application/json' \
-  -d '{"status":"resolved"}'
+  -d '{"status":"ignored"}'
 ```
 
 ## Realtime issue updates
 
-Dashboard clients can subscribe to updates for an owned project at
+Dashboard clients subscribe to an owned project at
 `ws://localhost:8080/api/v1/projects/1/realtime`. Because browser WebSocket
 connections cannot set an `Authorization` header, send the session token as
 the first message within five seconds:
@@ -148,19 +200,31 @@ the first message within five seconds:
 {"token":"fly_session_your_session_token"}
 ```
 
-After the session and project ownership are verified, the server confirms that
-the subscription is ready:
+After authenticating the session and checking project ownership, the server
+confirms the subscription:
 
 ```json
 {"type":"realtime.ready","project_id":1}
 ```
 
-Creating or updating an issue then produces a project-scoped notification:
+Processing an event then produces a project-scoped notification:
 
 ```json
 {"type":"issue.updated","project_id":1,"issue_id":7}
 ```
 
-Treat this notification as a signal to refetch the affected issue or issue
-list. PostgreSQL notifications are intentionally lightweight and are not a
-durable event history, so clients should also refetch after reconnecting.
+Treat notifications as signals to refetch the issue or list. PostgreSQL
+notifications are deliberately lightweight and are not a durable event
+history, so clients should also refetch after reconnecting.
+
+## Errors
+
+HTTP errors use a small JSON envelope:
+
+```json
+{"error":"human-readable message"}
+```
+
+Authentication failures return `401`, attempts to access another user's
+project are hidden behind `404`, validation failures return `400`, and
+duplicate emails or project names return `409`.

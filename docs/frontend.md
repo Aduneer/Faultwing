@@ -1,41 +1,92 @@
 # Frontend
 
-The dashboard lives in `web/` and uses React, TypeScript, and Vite. Node 26
-and npm 12 are the supported local toolchain in this workspace.
+The dashboard lives in `web/` and uses React, TypeScript, and Vite. The current
+development and CI toolchain uses Node.js 26 and npm 12.
 
-```sh
+## Local development
+
+Start the database, API, and worker from the repository root:
+
+```bash
+make db-up
+make run
+make run-worker
+```
+
+Run the API and worker in separate terminals. Install frontend dependencies and
+start Vite in a third terminal:
+
+```bash
 make frontend-install
 make frontend-dev
 ```
 
-The Vite development server proxies `/api` and WebSocket upgrades to the API
-at `127.0.0.1:8080`. The browser should construct realtime URLs from its own
-origin (for example, `/api/v1/projects/1/realtime`); this keeps the same-origin
-session during development while Vite forwards the upgrade.
+Open <http://127.0.0.1:5173>. Vite proxies `/api` requests and WebSocket
+upgrades to the API at `127.0.0.1:8080`, preserving the browser's same-origin
+session behavior.
 
-In production, put the dashboard and API behind the same origin (or configure
-an equivalent reverse proxy) and forward both `/api` HTTP requests and
-`/api/v1/projects/:projectID/realtime` WebSocket upgrades. Dashboard sessions
-are kept in `sessionStorage` so a tab can reconnect without putting a token in
-the URL; this intentionally logs the user out when the tab/session ends and
-does not provide cross-tab persistence.
+Use **Explore the interactive demo** when you only want to inspect the UI.
+Demo issues are browser-local fixtures and are always labelled as demo data.
 
-Build the production bundle with `make frontend-build`. End-to-end tests use
-Playwright via `make frontend-test`; install a browser once with
-`cd web && npx playwright install chromium` when a local browser is absent.
+## Session and realtime behavior
 
-The UI also supports a clearly labelled demo mode when no API is available;
-demo data is local-only and is never presented as live monitoring data. Any
-AI-generated visual work used in the dashboard should be disclosed alongside
-the relevant published screenshot or showcase material.
+The dashboard stores its login response in `sessionStorage`. A tab can reconnect
+without putting a token in the URL, but closing the tab ends that browser
+session and sessions are not shared across tabs.
 
-Issue details can open a parsed stack-frame location in a local editor. Editor
-choice is stored globally in the browser, while source checkout roots are kept
-per project so relative runtime paths can be mapped to local files. Presets are
-included for VS Code, VS Code Insiders, Cursor, Zed, and JetBrains IDEs
-launched through Toolbox. JetBrains settings also record the IDE product and
-its local project name because those are part of the Toolbox navigation URL.
+Realtime connections use the current page origin and send the session token as
+their first WebSocket message. Notifications trigger a normal API refetch; the
+WebSocket is not treated as an authoritative data store.
+
+## Open in Editor
+
+Issue details parse common Python, JavaScript, and Go-style stack-frame
+locations. The first time **Open in Editor** is used, the dashboard asks for an
+editor and the absolute path to that project's local checkout.
+
+Built-in URL schemes are available for:
+
+- Visual Studio Code and Visual Studio Code Insiders
+- Cursor
+- Zed
+- IntelliJ IDEA, GoLand, PyCharm, WebStorm, PhpStorm, Rider, CLion, RubyMine,
+  RustRover, and DataGrip through JetBrains Toolbox
+
 Other editors can use a custom URL template with `{path}`, `{pathEncoded}`,
-`{pathNoLeadingSlash}`, `{line}`, and `{column}`. These settings never leave
-the browser, and the file location can always be copied when no editor
-protocol is configured.
+`{pathNoLeadingSlash}`, `{line}`, and `{column}` placeholders. Browsers may ask
+for confirmation before opening a local application.
+
+Editor choice is stored globally in `localStorage`. Source roots and JetBrains
+project names are stored per FlyTrap project. These settings never leave the
+browser, and the parsed location can always be copied instead of opened.
+
+## Build and tests
+
+Build the production bundle:
+
+```bash
+make frontend-build
+```
+
+The focused Playwright suite covers user-visible behavior, responsive layouts,
+and the main API contract without mirroring every DOM node. Install Chromium
+once, then run it:
+
+```bash
+cd web
+npx playwright install chromium
+cd ..
+make frontend-test
+```
+
+## Production boundary
+
+The Vite development server is not a production server. A deployment must
+serve the built `web/dist/` files and proxy both HTTP requests under `/api` and
+WebSocket upgrades under `/api/v1/projects/:projectID/realtime` to the Go API
+on the same public origin.
+
+FlyTrap does not yet provide that reverse-proxy/container configuration. See
+[architecture.md](architecture.md) for the remaining operational limits.
+
+The frontend design and image assets were produced with AI assistance.
