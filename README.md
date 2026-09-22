@@ -1,22 +1,22 @@
-# FlyTrap
+# Faultwing
 
-[![CI](https://github.com/Aduneer/FlyTrap/actions/workflows/ci.yml/badge.svg)](https://github.com/Aduneer/FlyTrap/actions/workflows/ci.yml)
+[![CI](https://github.com/Aduneer/Faultwing/actions/workflows/ci.yml/badge.svg)](https://github.com/Aduneer/Faultwing/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 > Catch bugs before they infest production.
 
-FlyTrap is a self-hosted error monitor built with Go, PostgreSQL, React, and a
+Faultwing is a self-hosted error monitor built with Go, PostgreSQL, React, and a
 small Python SDK. It accepts application exceptions, groups repeated errors
 into issues, and turns unresolved issues into insects living in a terrarium.
 The normal issue list and stack traces are still there when it is time to
 debug.
 
-![FlyTrap desktop dashboard showing the issue terrarium and selected issue details](docs/assets/dashboard.webp)
+![Faultwing desktop dashboard showing the issue terrarium and selected issue details](docs/assets/dashboard.webp)
 
 _The frontend design and visual assets shown here were created with AI assistance._
 
 > [!IMPORTANT]
-> FlyTrap is an early-stage learning project. The local development workflow is
+> Faultwing is an early-stage learning project. The local development workflow is
 > complete, but production deployment and security hardening are not. Do not
 > expose the current server directly to the public internet.
 
@@ -45,8 +45,8 @@ _The frontend design and visual assets shown here were created with AI assistanc
 Clone the repository and start PostgreSQL:
 
 ```bash
-git clone https://github.com/Aduneer/FlyTrap.git
-cd FlyTrap
+git clone https://github.com/Aduneer/Faultwing.git
+cd Faultwing
 make db-up
 ```
 
@@ -91,11 +91,11 @@ python -m pip install -e sdk/python
 Then use the API key from your project:
 
 ```python
-from flytrap import FlyTrap
+from faultwing import Faultwing
 
-flytrap = FlyTrap(
+faultwing = Faultwing(
     "http://localhost:8080",
-    "fly_your_api_key",
+    "faultwing_your_api_key",
     environment="development",
     release="0.1.0",
 )
@@ -103,13 +103,13 @@ flytrap = FlyTrap(
 try:
     raise RuntimeError("the example service stopped responding")
 except RuntimeError as error:
-    flytrap.capture_exception(error)
+    faultwing.capture_exception(error)
 ```
 
 Or generate a small batch of sample errors:
 
 ```bash
-FLYTRAP_API_KEY=fly_your_api_key make generate-errors \
+FAULTWING_API_KEY=faultwing_your_api_key make generate-errors \
   ARGS="--count 10 --delay 0.1"
 ```
 
@@ -149,11 +149,11 @@ and failure behavior, [the API guide](docs/api.md) for HTTP examples, and
 | Variable | Default | Purpose |
 | --- | --- | --- |
 | `HTTP_ADDR` | `:8080` | API listen address |
-| `DATABASE_URL` | local `flytrap` PostgreSQL URL | PostgreSQL connection string |
+| `DATABASE_URL` | local `faultwing` PostgreSQL URL | PostgreSQL connection string |
 | `EVENT_RATE_LIMIT_PER_MINUTE` | `60` | Sustained ingestion limit per project |
 | `EVENT_RATE_LIMIT_BURST` | `10` | Additional per-project burst capacity |
 
-Copy `.env.example` when you need a reference, but note that FlyTrap reads
+Copy `.env.example` when you need a reference, but note that Faultwing reads
 environment variables directly; it does not load `.env` files itself.
 
 ## Development
@@ -198,10 +198,10 @@ scripts/          local development utilities
 - Project API keys and dashboard session tokens are stored as SHA-256 hashes;
   user passwords are stored with bcrypt.
 - Local editor source roots are kept in browser storage and are not sent to
-  the FlyTrap API.
+  the Faultwing API.
 - Credentials in `docker-compose.yml` and `.env.example` are development-only
   defaults. Replace them before any non-local deployment.
-- FlyTrap has not received a production security audit and does not yet ship
+- Faultwing has not received a production security audit and does not yet ship
   TLS termination, hardened deployment manifests, backups, or retention
   controls.
 
@@ -216,10 +216,10 @@ implemented with substantial AI assistance and is disclosed as such; the
 backend and documentation remain intended to be understandable, testable, and
 useful to people learning from the repository.
 
-[Bug reports](https://github.com/Aduneer/FlyTrap/issues) and contributions are
+[Bug reports](https://github.com/Aduneer/Faultwing/issues) and contributions are
 welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a larger
 change.
 
 ## License
 
-FlyTrap is available under the [MIT License](LICENSE).
+Faultwing is available under the [MIT License](LICENSE).

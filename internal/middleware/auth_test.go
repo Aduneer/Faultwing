@@ -7,8 +7,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/Aduneer/FlyTrap/internal/apikey"
-	"github.com/Aduneer/FlyTrap/internal/models"
+	"github.com/Aduneer/Faultwing/internal/apikey"
+	"github.com/Aduneer/Faultwing/internal/models"
 )
 
 type fakeAuthenticator struct {
@@ -40,7 +40,7 @@ func TestRequireAPIKeyAddsProjectToContext(t *testing.T) {
 	})
 	handler := RequireAPIKey(authenticator, next)
 	request := httptest.NewRequest(http.MethodPost, "/api/v1/events", nil)
-	request.Header.Set("Authorization", "Bearer fly_test-key")
+	request.Header.Set("Authorization", "Bearer faultwing_test-key")
 	response := httptest.NewRecorder()
 
 	handler.ServeHTTP(response, request)
@@ -51,7 +51,7 @@ func TestRequireAPIKeyAddsProjectToContext(t *testing.T) {
 	if !nextCalled {
 		t.Fatal("expected next handler to be called")
 	}
-	if authenticator.key != "fly_test-key" {
+	if authenticator.key != "faultwing_test-key" {
 		t.Fatalf("unexpected key passed to authenticator: %q", authenticator.key)
 	}
 }
@@ -82,7 +82,7 @@ func TestRequireAPIKeyRejectsInvalidKey(t *testing.T) {
 	})
 	handler := RequireAPIKey(authenticator, next)
 	request := httptest.NewRequest(http.MethodPost, "/api/v1/events", nil)
-	request.Header.Set("Authorization", "Bearer fly_invalid")
+	request.Header.Set("Authorization", "Bearer faultwing_invalid")
 	response := httptest.NewRecorder()
 
 	handler.ServeHTTP(response, request)
@@ -99,7 +99,7 @@ func TestRequireAPIKeyHandlesAuthenticatorFailure(t *testing.T) {
 	})
 	handler := RequireAPIKey(authenticator, next)
 	request := httptest.NewRequest(http.MethodPost, "/api/v1/events", nil)
-	request.Header.Set("Authorization", "Bearer fly_test-key")
+	request.Header.Set("Authorization", "Bearer faultwing_test-key")
 	response := httptest.NewRecorder()
 
 	handler.ServeHTTP(response, request)

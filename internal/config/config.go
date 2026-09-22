@@ -26,7 +26,7 @@ func Load() (Config, error) {
 
 	databaseURL := os.Getenv("DATABASE_URL")
 	if databaseURL == "" {
-		databaseURL = "postgres://flytrap:flytrap@localhost:5432/flytrap?sslmode=disable"
+		databaseURL = "postgres://faultwing:faultwing@localhost:5432/faultwing?sslmode=disable"
 	}
 
 	eventsPerMinute, err := positiveInt("EVENT_RATE_LIMIT_PER_MINUTE", defaultEventRateLimit)

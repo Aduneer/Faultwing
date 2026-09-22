@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Aduneer/FlyTrap/internal/middleware"
-	"github.com/Aduneer/FlyTrap/internal/models"
-	"github.com/Aduneer/FlyTrap/internal/userauth"
+	"github.com/Aduneer/Faultwing/internal/middleware"
+	"github.com/Aduneer/Faultwing/internal/models"
+	"github.com/Aduneer/Faultwing/internal/userauth"
 )
 
 type fakeProjectStore struct {
@@ -60,7 +60,7 @@ func TestProjectHandlerCreatesAndListsOwnedProjects(t *testing.T) {
 			Name:      "My App",
 			CreatedAt: time.Date(2026, 9, 19, 12, 0, 0, 0, time.UTC),
 		},
-		key: "fly_test-key",
+		key: "faultwing_test-key",
 	}
 	store.projects = []models.Project{store.project}
 	handler, token := authenticatedProjectHandler(t, store)
@@ -81,7 +81,7 @@ func TestProjectHandlerCreatesAndListsOwnedProjects(t *testing.T) {
 	if err := json.NewDecoder(response.Body).Decode(&result); err != nil {
 		t.Fatalf("decode response: %v", err)
 	}
-	if result.Project.ID != 1 || result.APIKey != "fly_test-key" {
+	if result.Project.ID != 1 || result.APIKey != "faultwing_test-key" {
 		t.Fatalf("unexpected response: %#v", result)
 	}
 

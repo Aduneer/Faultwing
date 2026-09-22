@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import type { IssueDetail, IssueStatus } from "../api/flytrap";
+import type { IssueDetail, IssueStatus } from "../api/faultwing";
 import {
   buildEditorURL,
   editorPresets,
@@ -128,7 +128,7 @@ function EditorActions({ issue }: { issue: IssueDetail }) {
       || !saveProjectSourceRoot(issue.project_id, draftRoot.trim())
       || !saveJetBrainsProjectName(issue.project_id, draftJetBrainsProjectName.trim())
     ) {
-      setConfigurationError("Your browser prevented FlyTrap from saving these local settings.");
+      setConfigurationError("Your browser prevented Faultwing from saving these local settings.");
       return;
     }
     setSettings(draftSettings);
@@ -178,7 +178,7 @@ function EditorActions({ issue }: { issue: IssueDetail }) {
             </header>
 
             <p className="editor-dialog__intro">
-              These settings stay in this browser. FlyTrap never sends your local source path to the server.
+              These settings stay in this browser. Faultwing never sends your local source path to the server.
             </p>
 
             <form onSubmit={finishConfiguration}>

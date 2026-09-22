@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import type { Issue } from "../api/flytrap";
+import type { Issue } from "../api/faultwing";
 
 const bugAssets = [
   "fruitfly",

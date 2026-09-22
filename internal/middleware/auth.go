@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/Aduneer/FlyTrap/internal/apikey"
-	"github.com/Aduneer/FlyTrap/internal/models"
+	"github.com/Aduneer/Faultwing/internal/apikey"
+	"github.com/Aduneer/Faultwing/internal/models"
 )
 
 type APIKeyAuthenticator interface {

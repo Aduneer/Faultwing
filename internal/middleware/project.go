@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/Aduneer/FlyTrap/internal/models"
+	"github.com/Aduneer/Faultwing/internal/models"
 )
 
 type ProjectOwnerStore interface {

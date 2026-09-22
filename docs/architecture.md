@@ -1,6 +1,6 @@
 # Architecture
 
-FlyTrap runs as three application processes around one PostgreSQL database:
+Faultwing runs as three application processes around one PostgreSQL database:
 
 ```text
                              ┌─────────────────┐

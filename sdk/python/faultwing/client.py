@@ -7,7 +7,7 @@ from urllib.request import Request, urlopen
 logger = logging.getLogger(__name__)
 
 
-class FlyTrap:
+class Faultwing:
     def __init__(
         self,
         url: str,
@@ -36,7 +36,7 @@ class FlyTrap:
         self._timeout = timeout
 
     def capture_exception(self, exception: Exception) -> bool:
-        """Send an exception to FlyTrap without raising delivery errors."""
+        """Send an exception to Faultwing without raising delivery errors."""
         exception_type = type(exception).__name__
         payload = {
             "exception_type": exception_type,
@@ -59,7 +59,7 @@ class FlyTrap:
             headers={
                 "Authorization": f"Bearer {self._api_key}",
                 "Content-Type": "application/json",
-                "User-Agent": "flytrap-python/0.1.0",
+                "User-Agent": "faultwing-python/0.1.0",
             },
             method="POST",
         )
@@ -68,5 +68,5 @@ class FlyTrap:
             with urlopen(request, timeout=self._timeout) as response:
                 return 200 <= response.status < 300
         except (HTTPError, URLError, OSError, TimeoutError) as error:
-            logger.warning("could not send exception to FlyTrap: %s", error)
+            logger.warning("could not send exception to Faultwing: %s", error)
             return False

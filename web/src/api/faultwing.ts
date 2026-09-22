@@ -56,7 +56,7 @@ export class APIError extends Error {
   }
 }
 
-// The dashboard is served by FlyTrap's origin in production. Keeping requests
+// The dashboard is served by Faultwing's origin in production. Keeping requests
 // same-origin means sessions never need a browser CORS exception.
 const apiBase = "";
 
@@ -77,7 +77,7 @@ async function request<T>(path: string, options: RequestInit = {}, token?: strin
   return response.json() as Promise<T>;
 }
 
-export const flytrap = {
+export const faultwing = {
   register: (email: string, password: string) =>
     request<User>("/auth/register", { method: "POST", body: JSON.stringify({ email, password }) }),
   login: (email: string, password: string) =>

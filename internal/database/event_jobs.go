@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Aduneer/FlyTrap/internal/models"
+	"github.com/Aduneer/Faultwing/internal/models"
 	"github.com/jackc/pgx/v5"
 )
 
@@ -91,7 +91,7 @@ func (s *Store) ProcessNextEventJob(ctx context.Context) (bool, error) {
 	if processingErr == nil {
 		_, processingErr = processingTx.Exec(ctx, `
 			SELECT pg_notify(
-				'flytrap_issue_updates',
+				'faultwing_issue_updates',
 				json_build_object(
 					'type', 'issue.updated',
 					'project_id', $1::bigint,

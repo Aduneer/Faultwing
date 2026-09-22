@@ -41,7 +41,7 @@ const presetTemplates: Record<"vscode" | "vscode-insiders" | "cursor" | "zed", s
   zed: "zed://file/{pathNoLeadingSlash}:{line}:{column}",
 };
 
-const settingsKey = "flytrap.editor.settings";
+const settingsKey = "faultwing.editor.settings";
 
 export function readEditorSettings(): EditorSettings | null {
   try {
@@ -74,7 +74,7 @@ export function saveEditorSettings(settings: EditorSettings): boolean {
 
 export function readProjectSourceRoot(projectId: number): string {
   try {
-    return localStorage.getItem(`flytrap.editor.root.${projectId}`) ?? "";
+    return localStorage.getItem(`faultwing.editor.root.${projectId}`) ?? "";
   } catch {
     return "";
   }
@@ -82,7 +82,7 @@ export function readProjectSourceRoot(projectId: number): string {
 
 export function saveProjectSourceRoot(projectId: number, root: string): boolean {
   try {
-    const key = `flytrap.editor.root.${projectId}`;
+    const key = `faultwing.editor.root.${projectId}`;
     if (root) localStorage.setItem(key, root);
     else localStorage.removeItem(key);
     return true;
@@ -93,7 +93,7 @@ export function saveProjectSourceRoot(projectId: number, root: string): boolean 
 
 export function readJetBrainsProjectName(projectId: number): string {
   try {
-    return localStorage.getItem(`flytrap.editor.jetbrains-project.${projectId}`) ?? "";
+    return localStorage.getItem(`faultwing.editor.jetbrains-project.${projectId}`) ?? "";
   } catch {
     return "";
   }
@@ -101,7 +101,7 @@ export function readJetBrainsProjectName(projectId: number): string {
 
 export function saveJetBrainsProjectName(projectId: number, projectName: string): boolean {
   try {
-    const key = `flytrap.editor.jetbrains-project.${projectId}`;
+    const key = `faultwing.editor.jetbrains-project.${projectId}`;
     if (projectName) localStorage.setItem(key, projectName);
     else localStorage.removeItem(key);
     return true;

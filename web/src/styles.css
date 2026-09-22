@@ -103,7 +103,7 @@ p {
   padding: 28px;
 }
 
-.flytrap-shell {
+.faultwing-shell {
   display: grid;
   grid-template-columns: 218px minmax(560px, 1fr) minmax(330px, 420px);
   gap: 12px;
@@ -112,8 +112,8 @@ p {
   margin: 0 auto;
 }
 
-.flytrap-sidebar,
-.flytrap-main,
+.faultwing-sidebar,
+.faultwing-main,
 .issue-panel,
 .auth-card {
   border: 1px solid rgba(255, 255, 255, 0.86);
@@ -127,7 +127,7 @@ p {
   -webkit-backdrop-filter: blur(30px) saturate(1.25);
 }
 
-.flytrap-sidebar {
+.faultwing-sidebar {
   display: flex;
   flex-direction: column;
   min-width: 0;
@@ -135,7 +135,7 @@ p {
   border-radius: 25px;
 }
 
-.flytrap-brand,
+.faultwing-brand,
 .auth-brand {
   display: flex;
   align-items: center;
@@ -146,7 +146,7 @@ p {
   letter-spacing: -0.04em;
 }
 
-.flytrap-brand {
+.faultwing-brand {
   min-height: 52px;
   padding: 0 11px;
 }
@@ -198,12 +198,12 @@ p {
     0 7px 20px rgba(50, 77, 55, 0.06);
 }
 
-.flytrap-nav {
+.faultwing-nav {
   display: grid;
   gap: 6px;
 }
 
-.flytrap-nav__item {
+.faultwing-nav__item {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -217,11 +217,11 @@ p {
   text-align: left;
 }
 
-.flytrap-nav__item:hover {
+.faultwing-nav__item:hover {
   background: rgba(255, 255, 255, 0.46);
 }
 
-.flytrap-nav__item--active {
+.faultwing-nav__item--active {
   color: #102219;
   background: rgba(71, 130, 84, 0.16);
 }
@@ -238,7 +238,7 @@ p {
   stroke-linejoin: round;
 }
 
-.flytrap-sidebar__spacer {
+.faultwing-sidebar__spacer {
   flex: 1;
   min-height: 28px;
 }
@@ -287,14 +287,14 @@ p {
   background: rgba(255, 255, 255, 0.46);
 }
 
-.flytrap-main {
+.faultwing-main {
   min-width: 0;
   overflow: hidden;
   border-radius: 25px;
   padding: 19px 18px 16px;
 }
 
-.flytrap-main__header {
+.faultwing-main__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -312,7 +312,7 @@ p {
   text-transform: uppercase;
 }
 
-.flytrap-main__header h1 {
+.faultwing-main__header h1 {
   margin: 0;
   color: #0f1c17;
   font-size: clamp(2rem, 2.4vw, 2.55rem);
@@ -363,12 +363,12 @@ p {
   background: #c16555;
 }
 
-.flytrap-main__stack {
+.faultwing-main__stack {
   display: grid;
   gap: 10px;
 }
 
-.flytrap-main__stack--terrarium .terrarium__stage {
+.faultwing-main__stack--terrarium .terrarium__stage {
   aspect-ratio: 1.5 / 1;
 }
 
@@ -579,7 +579,7 @@ p {
   font-size: 0.7rem;
 }
 
-.flytrap-issue-list-wrap {
+.faultwing-issue-list-wrap {
   min-width: 0;
 }
 
@@ -1446,7 +1446,7 @@ p {
     padding: 16px;
   }
 
-  .flytrap-shell {
+  .faultwing-shell {
     grid-template-columns: 192px minmax(500px, 1fr) minmax(300px, 340px);
     min-height: calc(100vh - 32px);
   }
@@ -1472,11 +1472,11 @@ p {
 }
 
 @media (max-width: 1000px) {
-  .flytrap-shell {
+  .faultwing-shell {
     grid-template-columns: 185px minmax(0, 1fr);
   }
 
-  .flytrap-sidebar {
+  .faultwing-sidebar {
     grid-row: 1 / 3;
   }
 
@@ -1491,17 +1491,17 @@ p {
     padding: 10px;
   }
 
-  .flytrap-shell {
+  .faultwing-shell {
     display: block;
   }
 
-  .flytrap-sidebar,
-  .flytrap-main,
+  .faultwing-sidebar,
+  .faultwing-main,
   .issue-panel {
     border-radius: 21px;
   }
 
-  .flytrap-sidebar {
+  .faultwing-sidebar {
     display: grid;
     grid-template-columns: 1fr minmax(145px, 1.2fr);
     gap: 8px 12px;
@@ -1509,7 +1509,7 @@ p {
     padding: 12px;
   }
 
-  .flytrap-brand {
+  .faultwing-brand {
     padding: 0 6px;
   }
 
@@ -1517,12 +1517,12 @@ p {
     margin: 0;
   }
 
-  .flytrap-nav {
+  .faultwing-nav {
     grid-column: 1 / -1;
     grid-template-columns: repeat(3, 1fr);
   }
 
-  .flytrap-nav__item {
+  .faultwing-nav__item {
     justify-content: center;
     min-height: 42px;
     padding: 0 7px;
@@ -1530,7 +1530,7 @@ p {
   }
 
   .nav-icon,
-  .flytrap-sidebar__spacer,
+  .faultwing-sidebar__spacer,
   .sidebar-account {
     display: none;
   }
@@ -1541,12 +1541,12 @@ p {
     text-align: center;
   }
 
-  .flytrap-main {
+  .faultwing-main {
     margin-bottom: 10px;
     padding: 15px 12px 12px;
   }
 
-  .flytrap-main__header {
+  .faultwing-main__header {
     align-items: flex-start;
   }
 
@@ -1598,12 +1598,12 @@ p {
 }
 
 @media (max-width: 430px) {
-  .flytrap-sidebar {
+  .faultwing-sidebar {
     grid-template-columns: 1fr;
   }
 
   .sidebar-project-picker,
-  .flytrap-nav,
+  .faultwing-nav,
   .sidebar-logout {
     grid-column: 1;
   }
@@ -1620,7 +1620,7 @@ p {
     text-align: center;
   }
 
-  .flytrap-main__header h1 {
+  .faultwing-main__header h1 {
     font-size: 1.9rem;
   }
 

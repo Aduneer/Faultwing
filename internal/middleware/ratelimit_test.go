@@ -5,7 +5,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/Aduneer/FlyTrap/internal/models"
+	"github.com/Aduneer/Faultwing/internal/models"
 )
 
 func TestRateLimitByProjectRejectsRequestsBeyondBurst(t *testing.T) {
@@ -18,7 +18,7 @@ func TestRateLimitByProjectRejectsRequestsBeyondBurst(t *testing.T) {
 
 	for requestNumber := 1; requestNumber <= 3; requestNumber++ {
 		request := httptest.NewRequest(http.MethodPost, "/api/v1/events", nil)
-		request.Header.Set("Authorization", "Bearer fly_test-key")
+		request.Header.Set("Authorization", "Bearer faultwing_test-key")
 		response := httptest.NewRecorder()
 		handler.ServeHTTP(response, request)
 
@@ -38,7 +38,7 @@ func TestRateLimitByProjectRejectsRequestsBeyondBurst(t *testing.T) {
 	otherProject := &fakeAuthenticator{project: models.Project{ID: 99}}
 	otherHandler := RequireAPIKey(otherProject, RateLimitByProject(limiter, next))
 	request := httptest.NewRequest(http.MethodPost, "/api/v1/events", nil)
-	request.Header.Set("Authorization", "Bearer fly_other-key")
+	request.Header.Set("Authorization", "Bearer faultwing_other-key")
 	response := httptest.NewRecorder()
 	otherHandler.ServeHTTP(response, request)
 	if response.Code != http.StatusCreated {

@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	sessionTokenPrefix = "fly_session_"
+	sessionTokenPrefix = "faultwing_session_"
 	sessionTokenBytes  = 32
 	SessionDuration    = 7 * 24 * time.Hour
 )

@@ -8,9 +8,9 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/Aduneer/FlyTrap/internal/config"
-	"github.com/Aduneer/FlyTrap/internal/database"
-	"github.com/Aduneer/FlyTrap/internal/worker"
+	"github.com/Aduneer/Faultwing/internal/config"
+	"github.com/Aduneer/Faultwing/internal/database"
+	"github.com/Aduneer/Faultwing/internal/worker"
 )
 
 func main() {
@@ -35,9 +35,9 @@ func run() error {
 	defer pool.Close()
 
 	processor := worker.NewProcessor(database.NewStore(pool), log.Default())
-	log.Println("FlyTrap worker started")
+	log.Println("Faultwing worker started")
 	processor.Run(ctx)
-	log.Println("FlyTrap worker stopped")
+	log.Println("Faultwing worker stopped")
 
 	return nil
 }

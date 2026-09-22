@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Aduneer/FlyTrap/internal/middleware"
-	"github.com/Aduneer/FlyTrap/internal/models"
+	"github.com/Aduneer/Faultwing/internal/middleware"
+	"github.com/Aduneer/Faultwing/internal/models"
 )
 
 type fakeEventStore struct {
@@ -53,7 +53,7 @@ func TestEventHandlerQueuesEventForAuthenticatedProject(t *testing.T) {
 		"environment": "production",
 		"release": "1.3.2"
 	}`))
-	createRequest.Header.Set("Authorization", "Bearer fly_test-key")
+	createRequest.Header.Set("Authorization", "Bearer faultwing_test-key")
 	createResponse := httptest.NewRecorder()
 
 	handler.ServeHTTP(createResponse, createRequest)

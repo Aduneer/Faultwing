@@ -3,8 +3,8 @@ package database
 import (
 	"context"
 
-	"github.com/Aduneer/FlyTrap/internal/fingerprint"
-	"github.com/Aduneer/FlyTrap/internal/models"
+	"github.com/Aduneer/Faultwing/internal/fingerprint"
+	"github.com/Aduneer/Faultwing/internal/models"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )

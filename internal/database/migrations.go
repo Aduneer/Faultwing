@@ -8,11 +8,11 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/Aduneer/FlyTrap/migrations"
+	"github.com/Aduneer/Faultwing/migrations"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-const migrationLockID int64 = 0x466c7954726170
+const migrationLockID int64 = 0x4661756c7477696e
 
 func migrate(ctx context.Context, pool *pgxpool.Pool) error {
 	files, err := migrationFiles(migrations.Files)

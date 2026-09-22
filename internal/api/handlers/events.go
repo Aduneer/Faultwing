@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Aduneer/FlyTrap/internal/middleware"
-	"github.com/Aduneer/FlyTrap/internal/models"
+	"github.com/Aduneer/Faultwing/internal/middleware"
+	"github.com/Aduneer/Faultwing/internal/models"
 )
 
 type EventStore interface {

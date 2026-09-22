@@ -7,7 +7,7 @@ DECLARE
 BEGIN
     IF EXISTS (SELECT 1 FROM projects WHERE owner_id IS NULL) THEN
         INSERT INTO users (email, password_hash)
-        VALUES ('legacy-projects@flytrap.invalid', '!')
+        VALUES ('legacy-projects@faultwing.invalid', '!')
         RETURNING id INTO legacy_user_id;
 
         UPDATE projects

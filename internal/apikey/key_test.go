@@ -24,9 +24,9 @@ func TestGenerate(t *testing.T) {
 }
 
 func TestHash(t *testing.T) {
-	first := Hash("fly_test-key")
-	second := Hash("fly_test-key")
-	different := Hash("fly_different-key")
+	first := Hash("faultwing_test-key")
+	second := Hash("faultwing_test-key")
+	different := Hash("faultwing_different-key")
 
 	if first != second {
 		t.Fatal("same key should produce the same hash")
@@ -37,7 +37,7 @@ func TestHash(t *testing.T) {
 }
 
 func TestDisplayPrefix(t *testing.T) {
-	key := "fly_abcdefghijklmnopqrstuvwxyz"
+	key := "faultwing_abcdefghijklmnopqrstuvwxyz"
 	prefix := DisplayPrefix(key)
 
 	if prefix != key[:displayPrefixLen] {

@@ -8,8 +8,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Aduneer/FlyTrap/internal/models"
-	"github.com/Aduneer/FlyTrap/internal/userauth"
+	"github.com/Aduneer/Faultwing/internal/models"
+	"github.com/Aduneer/Faultwing/internal/userauth"
 	"github.com/gorilla/websocket"
 )
 

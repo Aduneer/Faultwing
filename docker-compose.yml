@@ -1,10 +1,12 @@
+name: faultwing
+
 services:
   db:
     image: postgres:16-alpine
     environment:
-      POSTGRES_DB: flytrap
-      POSTGRES_USER: flytrap
-      POSTGRES_PASSWORD: flytrap
+      POSTGRES_DB: faultwing
+      POSTGRES_USER: faultwing
+      POSTGRES_PASSWORD: faultwing
     ports:
       - "5432:5432"
     volumes:

@@ -1,4 +1,4 @@
-module github.com/Aduneer/FlyTrap
+module github.com/Aduneer/Faultwing
 
 go 1.27.1
 

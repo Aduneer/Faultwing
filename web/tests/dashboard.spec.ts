@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test'
 
 const user = { id: 7, email: 'tester@example.com', created_at: '2026-09-21T10:00:00Z' }
-const session = { user, token: 'fly_session_test', expires_at: '2099-09-21T10:00:00Z' }
+const session = { user, token: 'faultwing_session_test', expires_at: '2099-09-21T10:00:00Z' }
 const project = { id: 12, owner_id: 7, name: 'Checkout API', created_at: '2026-09-21T10:00:00Z' }
 const issue = {
   id: 42, project_id: 12, fingerprint: 'abc', exception_type: 'TypeError',
@@ -46,13 +46,13 @@ test('demo mode is labeled local-only and remains usable on narrow reduced-motio
   await expect(page.getByText('No resolved issues')).toBeVisible()
 
   await page.getByRole('button', { name: 'Terrarium', exact: true }).click()
-  await expect(page.locator('.flytrap-main h1')).toHaveText('Terrarium')
+  await expect(page.locator('.faultwing-main h1')).toHaveText('Terrarium')
   await expect(page.getByRole('button', { name: 'Terrarium', exact: true })).toHaveAttribute('aria-current', 'page')
 
   await page.getByRole('button', { name: 'Projects', exact: true }).click()
-  await expect(page.locator('.flytrap-main h1')).toHaveText('Projects')
+  await expect(page.locator('.faultwing-main h1')).toHaveText('Projects')
   await page.getByRole('button', { name: /Checkout API/ }).last().click()
-  await expect(page.locator('.flytrap-main h1')).toHaveText('Issues')
+  await expect(page.locator('.faultwing-main h1')).toHaveText('Issues')
   await expect(habitatBugs).toHaveCount(3)
 
   await page.getByRole('button', { name: 'Open in Editor', exact: true }).click()
@@ -81,7 +81,7 @@ test('demo mode is labeled local-only and remains usable on narrow reduced-motio
     'href',
     'zed://file/work/checkout/db/client.go:42:1',
   )
-  await page.screenshot({ path: testInfo.project.name === 'mobile' ? '/tmp/flytrap-frontend-mobile.png' : '/tmp/flytrap-frontend-desktop.png', fullPage: true })
+  await page.screenshot({ path: testInfo.project.name === 'mobile' ? '/tmp/faultwing-frontend-mobile.png' : '/tmp/faultwing-frontend-desktop.png', fullPage: true })
 })
 
 test('login, project loading, pagination, issue detail, and status update follow the API contract', async ({ page }) => {

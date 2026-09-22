@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Aduneer/FlyTrap/internal/middleware"
-	"github.com/Aduneer/FlyTrap/internal/models"
-	"github.com/Aduneer/FlyTrap/internal/userauth"
+	"github.com/Aduneer/Faultwing/internal/middleware"
+	"github.com/Aduneer/Faultwing/internal/models"
+	"github.com/Aduneer/Faultwing/internal/userauth"
 )
 
 type fakeIssueStore struct {
@@ -109,7 +109,7 @@ func TestIssueHandlerListsAuthenticatedProjectIssues(t *testing.T) {
 	}}
 	handler := authenticatedIssueHandler(store)
 	request := httptest.NewRequest(http.MethodGet, "/api/v1/issues?status=open&limit=1", nil)
-	request.Header.Set("Authorization", "Bearer fly_test-key")
+	request.Header.Set("Authorization", "Bearer faultwing_test-key")
 	response := httptest.NewRecorder()
 
 	handler.ServeHTTP(response, request)
@@ -137,7 +137,7 @@ func TestIssueHandlerGetsIssueForAuthenticatedProject(t *testing.T) {
 	}}
 	handler := authenticatedIssueHandler(store)
 	request := httptest.NewRequest(http.MethodGet, "/api/v1/issues/7", nil)
-	request.Header.Set("Authorization", "Bearer fly_test-key")
+	request.Header.Set("Authorization", "Bearer faultwing_test-key")
 	response := httptest.NewRecorder()
 
 	handler.ServeHTTP(response, request)
@@ -154,7 +154,7 @@ func TestIssueHandlerDoesNotExposeAnotherProjectsIssue(t *testing.T) {
 	store := &fakeIssueStore{err: models.ErrIssueNotFound}
 	handler := authenticatedIssueHandler(store)
 	request := httptest.NewRequest(http.MethodGet, "/api/v1/issues/99", nil)
-	request.Header.Set("Authorization", "Bearer fly_test-key")
+	request.Header.Set("Authorization", "Bearer faultwing_test-key")
 	response := httptest.NewRecorder()
 
 	handler.ServeHTTP(response, request)
@@ -168,7 +168,7 @@ func TestIssueHandlerUpdatesStatus(t *testing.T) {
 	store := &fakeIssueStore{}
 	handler := authenticatedIssueHandler(store)
 	request := httptest.NewRequest(http.MethodPatch, "/api/v1/issues/7", strings.NewReader(`{"status":"resolved"}`))
-	request.Header.Set("Authorization", "Bearer fly_test-key")
+	request.Header.Set("Authorization", "Bearer faultwing_test-key")
 	response := httptest.NewRecorder()
 
 	handler.ServeHTTP(response, request)
@@ -185,7 +185,7 @@ func TestIssueHandlerRejectsInvalidStatus(t *testing.T) {
 	store := &fakeIssueStore{}
 	handler := authenticatedIssueHandler(store)
 	request := httptest.NewRequest(http.MethodPatch, "/api/v1/issues/7", strings.NewReader(`{"status":"closed"}`))
-	request.Header.Set("Authorization", "Bearer fly_test-key")
+	request.Header.Set("Authorization", "Bearer faultwing_test-key")
 	response := httptest.NewRecorder()
 
 	handler.ServeHTTP(response, request)

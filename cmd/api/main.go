@@ -11,10 +11,10 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/Aduneer/FlyTrap/internal"
-	"github.com/Aduneer/FlyTrap/internal/config"
-	"github.com/Aduneer/FlyTrap/internal/database"
-	"github.com/Aduneer/FlyTrap/internal/middleware"
+	"github.com/Aduneer/Faultwing/internal"
+	"github.com/Aduneer/Faultwing/internal/config"
+	"github.com/Aduneer/Faultwing/internal/database"
+	"github.com/Aduneer/Faultwing/internal/middleware"
 )
 
 const (
@@ -69,7 +69,7 @@ func run() error {
 		serverErrors <- server.ListenAndServe()
 	}()
 
-	log.Printf("FlyTrap API listening on %s", cfg.HTTPAddr)
+	log.Printf("Faultwing API listening on %s", cfg.HTTPAddr)
 	select {
 	case err := <-serverErrors:
 		if err != nil && !errors.Is(err, http.ErrServerClosed) {

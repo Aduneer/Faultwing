@@ -16,7 +16,7 @@ test:
 	go test ./...
 
 test-integration:
-	TEST_DATABASE_URL="$${TEST_DATABASE_URL:-postgres://flytrap:flytrap@localhost:5432/flytrap?sslmode=disable}" \
+	TEST_DATABASE_URL="$${TEST_DATABASE_URL:-postgres://faultwing:faultwing@localhost:5432/faultwing?sslmode=disable}" \
 		go test ./internal/database -run '^Test(Monitoring|UserSession)Flow$$' -v
 
 test-python:

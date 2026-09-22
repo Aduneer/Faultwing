@@ -57,7 +57,7 @@ Other editors can use a custom URL template with `{path}`, `{pathEncoded}`,
 for confirmation before opening a local application.
 
 Editor choice is stored globally in `localStorage`. Source roots and JetBrains
-project names are stored per FlyTrap project. These settings never leave the
+project names are stored per Faultwing project. These settings never leave the
 browser, and the parsed location can always be copied instead of opened.
 
 ## Build and tests
@@ -86,7 +86,7 @@ serve the built `web/dist/` files and proxy both HTTP requests under `/api` and
 WebSocket upgrades under `/api/v1/projects/:projectID/realtime` to the Go API
 on the same public origin.
 
-FlyTrap does not yet provide that reverse-proxy/container configuration. See
+Faultwing does not yet provide that reverse-proxy/container configuration. See
 [architecture.md](architecture.md) for the remaining operational limits.
 
 The frontend design and image assets were produced with AI assistance.

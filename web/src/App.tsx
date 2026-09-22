@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
-import { APIError, flytrap, type Session } from "./api/flytrap";
+import { APIError, faultwing, type Session } from "./api/faultwing";
 import { Dashboard } from "./pages/Dashboard";
 
-const sessionKey = "flytrap.session";
+const sessionKey = "faultwing.session";
 
 function storedSession(): Session | null {
   try {
@@ -63,14 +63,14 @@ export default function App() {
 
     try {
       if (mode === "register") {
-        await flytrap.register(email, password);
+        await faultwing.register(email, password);
         setMode("login");
         setError("Account created. Sign in to continue.");
       } else {
-        finishLogin(await flytrap.login(email, password));
+        finishLogin(await faultwing.login(email, password));
       }
     } catch (caught) {
-      setError(caught instanceof APIError ? caught.message : "Unable to reach FlyTrap. Please try again.");
+      setError(caught instanceof APIError ? caught.message : "Unable to reach Faultwing. Please try again.");
     } finally {
       setBusy(false);
     }
@@ -86,7 +86,7 @@ export default function App() {
     sessionStorage.removeItem(sessionKey);
     setSession(null);
     try {
-      await flytrap.logout(token);
+      await faultwing.logout(token);
     } catch (caught) {
       setError(
         `You were signed out locally, but the server session could not be revoked: ${
@@ -113,7 +113,7 @@ export default function App() {
       <section className="auth-card">
         <div className="auth-brand">
           <span className="brand-leaf" aria-hidden="true" />
-          FlyTrap
+          Faultwing
         </div>
         <p className="eyebrow">Error monitoring, naturally organized</p>
         <h1>{mode === "login" ? "Welcome back." : "Create your account."}</h1>

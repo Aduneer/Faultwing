@@ -1,4 +1,4 @@
-import type { Issue, IssueStatus } from "../api/flytrap";
+import type { Issue, IssueStatus } from "../api/faultwing";
 import { bugAssetForIssue } from "./Bug";
 
 const statuses: IssueStatus[] = ["open", "resolved", "ignored"];

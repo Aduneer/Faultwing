@@ -1,4 +1,4 @@
-import type { Issue } from "../api/flytrap";
+import type { Issue } from "../api/faultwing";
 import Bug from "./Bug";
 
 type TerrariumProps = {

@@ -1,6 +1,6 @@
-# Contributing to FlyTrap
+# Contributing to Faultwing
 
-FlyTrap is an early-stage learning project. Small bug fixes, documentation
+Faultwing is an early-stage learning project. Small bug fixes, documentation
 improvements, tests for meaningful behavior, and focused feature proposals are
 welcome.
 

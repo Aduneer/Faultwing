@@ -3,8 +3,8 @@ package internal
 import (
 	"net/http"
 
-	"github.com/Aduneer/FlyTrap/internal/api/handlers"
-	"github.com/Aduneer/FlyTrap/internal/middleware"
+	"github.com/Aduneer/Faultwing/internal/api/handlers"
+	"github.com/Aduneer/Faultwing/internal/middleware"
 )
 
 type Store interface {

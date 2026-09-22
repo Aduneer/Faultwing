@@ -6,7 +6,7 @@ import random
 import time
 from collections.abc import Callable, Sequence
 
-from flytrap import FlyTrap
+from faultwing import Faultwing
 
 
 class DatabaseTimeoutError(RuntimeError):
@@ -56,26 +56,26 @@ def non_negative_float(value: str) -> float:
 
 
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Send fake exceptions to FlyTrap")
+    parser = argparse.ArgumentParser(description="Send fake exceptions to Faultwing")
     parser.add_argument(
         "--url",
-        default=os.getenv("FLYTRAP_URL", "http://localhost:8080"),
-        help="FlyTrap base URL (default: %(default)s)",
+        default=os.getenv("FAULTWING_URL", "http://localhost:8080"),
+        help="Faultwing base URL (default: %(default)s)",
     )
     parser.add_argument(
         "--api-key",
-        default=os.getenv("FLYTRAP_API_KEY"),
-        help="project API key (or set FLYTRAP_API_KEY)",
+        default=os.getenv("FAULTWING_API_KEY"),
+        help="project API key (or set FAULTWING_API_KEY)",
     )
     parser.add_argument(
         "--environment",
-        default=os.getenv("FLYTRAP_ENVIRONMENT", "development"),
+        default=os.getenv("FAULTWING_ENVIRONMENT", "development"),
         help="event environment (default: %(default)s)",
     )
     parser.add_argument(
         "--release",
-        default=os.getenv("FLYTRAP_RELEASE"),
-        help="optional release name (or set FLYTRAP_RELEASE)",
+        default=os.getenv("FAULTWING_RELEASE"),
+        help="optional release name (or set FAULTWING_RELEASE)",
     )
     parser.add_argument(
         "--type",
@@ -99,13 +99,13 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
 
     args = parser.parse_args(argv)
     if not args.api_key:
-        parser.error("--api-key or FLYTRAP_API_KEY is required")
+        parser.error("--api-key or FAULTWING_API_KEY is required")
     return args
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = parse_args(argv)
-    client = FlyTrap(
+    client = Faultwing(
         args.url,
         args.api_key,
         environment=args.environment,

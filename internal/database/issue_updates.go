@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Aduneer/FlyTrap/internal/models"
+	"github.com/Aduneer/Faultwing/internal/models"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-const issueUpdatesChannel = "flytrap_issue_updates"
+const issueUpdatesChannel = "faultwing_issue_updates"
 
 type IssueUpdateListener struct {
 	connection *pgxpool.Conn

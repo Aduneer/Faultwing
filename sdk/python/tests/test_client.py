@@ -3,7 +3,7 @@ import unittest
 from unittest.mock import patch
 from urllib.error import URLError
 
-from flytrap import FlyTrap
+from faultwing import Faultwing
 
 
 class FakeResponse:
@@ -16,12 +16,12 @@ class FakeResponse:
         return False
 
 
-class FlyTrapTest(unittest.TestCase):
-    @patch("flytrap.client.urlopen", return_value=FakeResponse())
+class FaultwingTest(unittest.TestCase):
+    @patch("faultwing.client.urlopen", return_value=FakeResponse())
     def test_capture_exception_sends_monitoring_context(self, mocked_urlopen):
-        client = FlyTrap(
+        client = Faultwing(
             "http://localhost:8080/",
-            "fly_test-key",
+            "faultwing_test-key",
             environment="development",
             release="1.3.2",
             timeout=1.5,
@@ -35,7 +35,7 @@ class FlyTrapTest(unittest.TestCase):
         self.assertTrue(delivered)
         request = mocked_urlopen.call_args.args[0]
         self.assertEqual(request.full_url, "http://localhost:8080/api/v1/events")
-        self.assertEqual(request.get_header("Authorization"), "Bearer fly_test-key")
+        self.assertEqual(request.get_header("Authorization"), "Bearer faultwing_test-key")
         self.assertEqual(mocked_urlopen.call_args.kwargs["timeout"], 1.5)
 
         payload = json.loads(request.data)
@@ -45,11 +45,11 @@ class FlyTrapTest(unittest.TestCase):
         self.assertEqual(payload["environment"], "development")
         self.assertEqual(payload["release"], "1.3.2")
 
-    @patch("flytrap.client.urlopen", side_effect=URLError("offline"))
+    @patch("faultwing.client.urlopen", side_effect=URLError("offline"))
     def test_capture_exception_does_not_raise_delivery_errors(self, _mocked_urlopen):
-        client = FlyTrap("http://localhost:8080", "fly_test-key")
+        client = Faultwing("http://localhost:8080", "faultwing_test-key")
 
-        with self.assertLogs("flytrap.client", level="WARNING"):
+        with self.assertLogs("faultwing.client", level="WARNING"):
             delivered = client.capture_exception(RuntimeError("application error"))
 
         self.assertFalse(delivered)

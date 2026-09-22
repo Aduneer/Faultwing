@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   APIError,
-  flytrap,
+  faultwing,
   type Issue,
   type IssueDetail,
   type IssueStatus,
   type Project,
   type Session,
-} from "../api/flytrap";
+} from "../api/faultwing";
 import { IssueList } from "../components/IssueList";
 import { IssuePanel } from "../components/IssuePanel";
 import { Terrarium } from "../components/Terrarium";
@@ -190,7 +190,7 @@ export function Dashboard({
     if (demo || !session) return;
 
     let active = true;
-    flytrap.projects(session.token)
+    faultwing.projects(session.token)
       .then((loaded) => {
         if (!active) return;
         setProjects(loaded);
@@ -220,7 +220,7 @@ export function Dashboard({
     setError(null);
 
     try {
-      const page = await flytrap.issues(session.token, projectId, filter, cursor);
+      const page = await faultwing.issues(session.token, projectId, filter, cursor);
       if (version !== requestVersion.current) return;
 
       const received = page.issues ?? [];
@@ -280,7 +280,7 @@ export function Dashboard({
     setDetailError(null);
 
     try {
-      const loaded = normalizedDetail(await flytrap.issue(session.token, projectId, selectedId));
+      const loaded = normalizedDetail(await faultwing.issue(session.token, projectId, selectedId));
       if (version === detailVersion.current) setDetail(loaded);
     } catch (caught) {
       if (version === detailVersion.current && !expireIfNeeded(caught)) {
@@ -307,7 +307,7 @@ export function Dashboard({
 
     const refreshIssue = async (issueId: number) => {
       try {
-        const loaded = normalizedDetail(await flytrap.issue(session.token, projectId, issueId));
+        const loaded = normalizedDetail(await faultwing.issue(session.token, projectId, issueId));
         if (cancelled) return;
 
         const wasLoaded = issuesRef.current.some((issue) => issue.id === issueId);
@@ -334,7 +334,7 @@ export function Dashboard({
     const connect = () => {
       if (cancelled) return;
       setRealtimeState("connecting");
-      socket = new WebSocket(flytrap.realtimeURL(projectId));
+      socket = new WebSocket(faultwing.realtimeURL(projectId));
       socket.onopen = () => socket?.send(JSON.stringify({ token: session.token }));
       socket.onmessage = (event) => {
         try {
@@ -385,7 +385,7 @@ export function Dashboard({
     setError(null);
 
     try {
-      const created = await flytrap.createProject(session.token, newName.trim());
+      const created = await faultwing.createProject(session.token, newName.trim());
       setProjects((current) => [...current, created.project]);
       setOneTimeKey(created.api_key);
       setCopyLabel("Copy key");
@@ -417,7 +417,7 @@ export function Dashboard({
           resolved_at: status === "resolved" ? new Date().toISOString() : undefined,
         };
       } else if (session) {
-        updated = await flytrap.updateIssue(session.token, targetProject, targetIssue, status);
+        updated = await faultwing.updateIssue(session.token, targetProject, targetIssue, status);
       } else {
         return;
       }
@@ -491,11 +491,11 @@ export function Dashboard({
 
   return (
     <main className="dashboard">
-      <div className="flytrap-shell">
-        <aside className="flytrap-sidebar" aria-label="FlyTrap navigation">
-          <div className="flytrap-brand" aria-label="FlyTrap">
+      <div className="faultwing-shell">
+        <aside className="faultwing-sidebar" aria-label="Faultwing navigation">
+          <div className="faultwing-brand" aria-label="Faultwing">
             <span className="brand-leaf" aria-hidden="true" />
-            <strong>FlyTrap</strong>
+            <strong>Faultwing</strong>
           </div>
 
           <label className="sidebar-project-picker" htmlFor="project-picker">
@@ -513,10 +513,10 @@ export function Dashboard({
             </select>
           </label>
 
-          <nav className="flytrap-nav" aria-label="Workspace shortcuts">
+          <nav className="faultwing-nav" aria-label="Workspace shortcuts">
             <button
               type="button"
-              className={`flytrap-nav__item ${workspaceView === "issues" ? "flytrap-nav__item--active" : ""}`}
+              className={`faultwing-nav__item ${workspaceView === "issues" ? "faultwing-nav__item--active" : ""}`}
               aria-current={workspaceView === "issues" ? "page" : undefined}
               onClick={() => showWorkspace("issues")}
             >
@@ -525,7 +525,7 @@ export function Dashboard({
             </button>
             <button
               type="button"
-              className={`flytrap-nav__item ${workspaceView === "terrarium" ? "flytrap-nav__item--active" : ""}`}
+              className={`faultwing-nav__item ${workspaceView === "terrarium" ? "faultwing-nav__item--active" : ""}`}
               aria-current={workspaceView === "terrarium" ? "page" : undefined}
               onClick={() => showWorkspace("terrarium")}
             >
@@ -534,7 +534,7 @@ export function Dashboard({
             </button>
             <button
               type="button"
-              className={`flytrap-nav__item ${workspaceView === "projects" ? "flytrap-nav__item--active" : ""}`}
+              className={`faultwing-nav__item ${workspaceView === "projects" ? "faultwing-nav__item--active" : ""}`}
               aria-current={workspaceView === "projects" ? "page" : undefined}
               onClick={() => showWorkspace("projects")}
             >
@@ -543,7 +543,7 @@ export function Dashboard({
             </button>
           </nav>
 
-          <div className="flytrap-sidebar__spacer" />
+          <div className="faultwing-sidebar__spacer" />
 
           <div className="sidebar-account">
             <span className="sidebar-account__avatar" aria-hidden="true">
@@ -556,8 +556,8 @@ export function Dashboard({
           </button>
         </aside>
 
-        <section className="flytrap-main" aria-label="Issues workspace">
-          <header className="flytrap-main__header">
+        <section className="faultwing-main" aria-label="Issues workspace">
+          <header className="faultwing-main__header">
             <div>
               <p className="workspace-project">{currentProject?.name ?? "No project selected"}</p>
               <h1>{viewTitle}</h1>
@@ -657,7 +657,7 @@ export function Dashboard({
               <button type="button" className="button" onClick={() => showWorkspace("projects")}>Open projects</button>
             </div>
           ) : (
-            <div className={`flytrap-main__stack ${workspaceView === "terrarium" ? "flytrap-main__stack--terrarium" : ""}`}>
+            <div className={`faultwing-main__stack ${workspaceView === "terrarium" ? "faultwing-main__stack--terrarium" : ""}`}>
               <section id="terrarium" className="habitat-section">
                 <div className="habitat-section__heading">
                   <span>{habitatIssues.length} loaded open issue{habitatIssues.length === 1 ? "" : "s"}</span>
@@ -679,7 +679,7 @@ export function Dashboard({
                 )}
               </section>
 
-              {workspaceView === "issues" && <div id="issues" className="flytrap-issue-list-wrap">
+              {workspaceView === "issues" && <div id="issues" className="faultwing-issue-list-wrap">
                 {loadingIssues ? (
                   <p className="state-message" aria-busy="true">Loading issues…</p>
                 ) : (

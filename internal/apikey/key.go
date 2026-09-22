@@ -8,8 +8,8 @@ import (
 )
 
 const (
-	keyPrefix        = "fly_"
-	displayPrefixLen = 12
+	keyPrefix        = "faultwing_"
+	displayPrefixLen = len(keyPrefix) + 8
 )
 
 var ErrInvalid = errors.New("invalid API key")

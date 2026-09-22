@@ -3,11 +3,11 @@
 The API listens on `http://localhost:8080` by default and returns JSON unless a
 successful endpoint has no response body.
 
-FlyTrap has two bearer-token types:
+Faultwing has two bearer-token types:
 
-- `fly_session_...` authenticates a dashboard user and expires after seven
+- `faultwing_session_...` authenticates a dashboard user and expires after seven
   days. Use it for projects and user-scoped issue routes.
-- `fly_...` authenticates one project. Use it for event ingestion and the
+- `faultwing_...` authenticates one project. Use it for event ingestion and the
   API-key-scoped issue routes.
 
 API and session tokens are secrets. The examples below contain placeholders,
@@ -49,7 +49,7 @@ curl -X POST http://localhost:8080/api/v1/auth/login \
     "email": "learner@example.com",
     "created_at": "2026-09-22T12:00:00Z"
   },
-  "token": "fly_session_your_session_token",
+  "token": "faultwing_session_your_session_token",
   "expires_at": "2026-09-29T12:00:00Z"
 }
 ```
@@ -58,7 +58,7 @@ Log out by revoking the session token:
 
 ```bash
 curl -X POST http://localhost:8080/api/v1/auth/logout \
-  -H 'Authorization: Bearer fly_session_your_session_token'
+  -H 'Authorization: Bearer faultwing_session_your_session_token'
 ```
 
 A successful logout returns `204 No Content`.
@@ -69,7 +69,7 @@ Create a project using a session token:
 
 ```bash
 curl -X POST http://localhost:8080/api/v1/projects \
-  -H 'Authorization: Bearer fly_session_your_session_token' \
+  -H 'Authorization: Bearer faultwing_session_your_session_token' \
   -H 'Content-Type: application/json' \
   -d '{"name":"My App"}'
 ```
@@ -85,7 +85,7 @@ only returned by this request, so copy it before navigating away.
     "name": "My App",
     "created_at": "2026-09-22T12:05:00Z"
   },
-  "api_key": "fly_your_api_key"
+  "api_key": "faultwing_your_api_key"
 }
 ```
 
@@ -93,7 +93,7 @@ List the signed-in user's projects:
 
 ```bash
 curl http://localhost:8080/api/v1/projects \
-  -H 'Authorization: Bearer fly_session_your_session_token'
+  -H 'Authorization: Bearer faultwing_session_your_session_token'
 ```
 
 API-key rotation and revocation endpoints are not implemented yet. Create a
@@ -106,7 +106,7 @@ project's API key:
 
 ```bash
 curl -X POST http://localhost:8080/api/v1/events \
-  -H 'Authorization: Bearer fly_your_api_key' \
+  -H 'Authorization: Bearer faultwing_your_api_key' \
   -H 'Content-Type: application/json' \
   -d '{
     "exception_type":"DatabaseTimeoutError",
@@ -140,13 +140,13 @@ owns the project:
 
 ```bash
 curl 'http://localhost:8080/api/v1/projects/1/issues?status=open&limit=25' \
-  -H 'Authorization: Bearer fly_session_your_session_token'
+  -H 'Authorization: Bearer faultwing_session_your_session_token'
 
 curl http://localhost:8080/api/v1/projects/1/issues/7 \
-  -H 'Authorization: Bearer fly_session_your_session_token'
+  -H 'Authorization: Bearer faultwing_session_your_session_token'
 
 curl -X PATCH http://localhost:8080/api/v1/projects/1/issues/7 \
-  -H 'Authorization: Bearer fly_session_your_session_token' \
+  -H 'Authorization: Bearer faultwing_session_your_session_token' \
   -H 'Content-Type: application/json' \
   -d '{"status":"resolved"}'
 ```
@@ -155,10 +155,10 @@ The project API key can access equivalent routes without a project ID:
 
 ```bash
 curl 'http://localhost:8080/api/v1/issues?status=open&limit=25' \
-  -H 'Authorization: Bearer fly_your_api_key'
+  -H 'Authorization: Bearer faultwing_your_api_key'
 
 curl http://localhost:8080/api/v1/issues/7 \
-  -H 'Authorization: Bearer fly_your_api_key'
+  -H 'Authorization: Bearer faultwing_your_api_key'
 ```
 
 `status` may be `open`, `resolved`, or `ignored`. The page limit defaults to 50
@@ -175,7 +175,7 @@ When `next_cursor` is present, pass it back unchanged:
 
 ```bash
 curl 'http://localhost:8080/api/v1/issues?status=open&limit=25&cursor=NEXT_CURSOR' \
-  -H 'Authorization: Bearer fly_your_api_key'
+  -H 'Authorization: Bearer faultwing_your_api_key'
 ```
 
 Issue detail responses also include distinct `environments` and `releases`
@@ -184,7 +184,7 @@ supported states:
 
 ```bash
 curl -X PATCH http://localhost:8080/api/v1/issues/7 \
-  -H 'Authorization: Bearer fly_your_api_key' \
+  -H 'Authorization: Bearer faultwing_your_api_key' \
   -H 'Content-Type: application/json' \
   -d '{"status":"ignored"}'
 ```
@@ -197,7 +197,7 @@ connections cannot set an `Authorization` header, send the session token as
 the first message within five seconds:
 
 ```json
-{"token":"fly_session_your_session_token"}
+{"token":"faultwing_session_your_session_token"}
 ```
 
 After authenticating the session and checking project ownership, the server

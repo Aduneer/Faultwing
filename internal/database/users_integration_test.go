@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Aduneer/FlyTrap/internal/models"
+	"github.com/Aduneer/Faultwing/internal/models"
 )
 
 func TestUserSessionFlow(t *testing.T) {

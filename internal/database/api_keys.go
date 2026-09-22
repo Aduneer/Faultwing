@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
-	"github.com/Aduneer/FlyTrap/internal/apikey"
-	"github.com/Aduneer/FlyTrap/internal/models"
+	"github.com/Aduneer/Faultwing/internal/apikey"
+	"github.com/Aduneer/Faultwing/internal/models"
 	"github.com/jackc/pgx/v5"
 )
 

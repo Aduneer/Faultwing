@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Aduneer/FlyTrap/internal/models"
+	"github.com/Aduneer/Faultwing/internal/models"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -199,7 +199,7 @@ func newIntegrationStore(t *testing.T, ctx context.Context, databaseURL string) 
 	}
 	t.Cleanup(adminPool.Close)
 
-	schema := fmt.Sprintf("flytrap_test_%d", time.Now().UnixNano())
+	schema := fmt.Sprintf("faultwing_test_%d", time.Now().UnixNano())
 	identifier := pgx.Identifier{schema}.Sanitize()
 	if _, err := adminPool.Exec(ctx, "CREATE SCHEMA "+identifier); err != nil {
 		t.Fatalf("create integration schema: %v", err)
