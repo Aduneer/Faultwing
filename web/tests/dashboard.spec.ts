@@ -49,6 +49,10 @@ test('demo mode is labeled local-only and remains usable on narrow reduced-motio
   await expect(page.locator('.faultwing-main h1')).toHaveText('Terrarium')
   await expect(page.getByRole('button', { name: 'Terrarium', exact: true })).toHaveAttribute('aria-current', 'page')
 
+  await page.getByRole('button', { name: 'Faultwing home' }).click()
+  await expect(page.locator('.faultwing-main h1')).toHaveText('Issues')
+  await expect(page.getByRole('button', { name: 'Issues', exact: true })).toHaveAttribute('aria-current', 'page')
+
   await page.getByRole('button', { name: 'Projects', exact: true }).click()
   await expect(page.locator('.faultwing-main h1')).toHaveText('Projects')
   await page.getByRole('button', { name: /Checkout API/ }).last().click()

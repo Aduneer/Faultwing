@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { APIError, faultwing, type Session } from "./api/faultwing";
+import { BrandMark } from "./components/BrandMark";
 import { Dashboard } from "./pages/Dashboard";
 
 const sessionKey = "faultwing.session";
@@ -112,7 +113,7 @@ export default function App() {
     <main className="auth-page">
       <section className="auth-card">
         <div className="auth-brand">
-          <span className="brand-leaf" aria-hidden="true" />
+          <BrandMark />
           Faultwing
         </div>
         <p className="eyebrow">Error monitoring, naturally organized</p>

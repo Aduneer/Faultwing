@@ -10,6 +10,7 @@ import {
 } from "../api/faultwing";
 import { IssueList } from "../components/IssueList";
 import { IssuePanel } from "../components/IssuePanel";
+import { BrandMark } from "../components/BrandMark";
 import { Terrarium } from "../components/Terrarium";
 
 const demoProject: Project = {
@@ -493,10 +494,15 @@ export function Dashboard({
     <main className="dashboard">
       <div className="faultwing-shell">
         <aside className="faultwing-sidebar" aria-label="Faultwing navigation">
-          <div className="faultwing-brand" aria-label="Faultwing">
-            <span className="brand-leaf" aria-hidden="true" />
+          <button
+            type="button"
+            className="faultwing-brand faultwing-brand--home"
+            aria-label="Faultwing home"
+            onClick={() => showWorkspace("issues")}
+          >
+            <BrandMark />
             <strong>Faultwing</strong>
-          </div>
+          </button>
 
           <label className="sidebar-project-picker" htmlFor="project-picker">
             <span className="sr-only">Project</span>
