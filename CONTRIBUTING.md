@@ -17,6 +17,7 @@ make test
 make test-integration
 make test-python
 make test-node
+make test-go-sdk
 make frontend-build
 make frontend-test
 ```

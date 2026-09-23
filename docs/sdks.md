@@ -1,12 +1,12 @@
 # SDKs
 
-Faultwing has small Python and Node.js clients for sending exceptions to
+Faultwing has small Go, Python, and Node.js clients for sending errors to
 `POST /api/v1/events`. Create a project in the dashboard and copy its API key
 when it appears; the plaintext key is shown only once. The API and worker must
 both be running for an accepted event to appear as an issue.
 
-Neither client is published to a package registry yet. Install them from a
-local clone of this repository. Both clients return whether the request
+The clients are not published as separate SDK releases yet. Install them from
+a local clone of this repository. Each client returns whether the request
 succeeded; `true` means the API accepted the event into its durable queue, not
 that the worker has already processed it. Delivery failures return `false`.
 
@@ -97,6 +97,59 @@ default timeout is two seconds; set `timeoutMs` to change it. Node.js can load
 the example `.env` file when starting your application with
 `node --env-file=.env app.mjs`.
 
-These clients are intended for server-side use. Their package versions start
-at `0.1.0` independently of the repository's release tags; the Node SDK was
-added after the repository's `v0.1.0` release.
+## Go
+
+The Go SDK requires Go 1.22 or newer and is a separate module with no
+third-party dependencies. Until it has its own release tag, add it to your Go
+application's `go.mod` using a local clone (replace `/path/to/Faultwing` with
+its actual path):
+
+```bash
+go mod edit -require=github.com/Aduneer/Faultwing/sdk/go@v0.0.0
+go mod edit -replace=github.com/Aduneer/Faultwing/sdk/go=/path/to/Faultwing/sdk/go
+```
+
+In your Go application:
+
+```go
+package main
+
+import (
+    "context"
+    "errors"
+    "log"
+    "os"
+
+    faultwing "github.com/Aduneer/Faultwing/sdk/go"
+)
+
+func main() {
+    client, err := faultwing.NewClient(
+        os.Getenv("FAULTWING_URL"),
+        os.Getenv("FAULTWING_API_KEY"),
+        faultwing.Options{Environment: "development", Release: "0.1.0"},
+    )
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    if !client.CaptureError(context.Background(), errors.New("the example service stopped responding")) {
+        log.Print("Faultwing did not accept the error")
+    }
+}
+```
+
+`CaptureError` uses the concrete Go error type and the line where it is called
+as a stable location for issue grouping. Ordinary Go errors do not carry a
+stack trace. If you need to control grouping, use `CaptureEvent` and supply an
+`Event{ExceptionType, Message, Stacktrace}` with a stable location. Both
+methods return `false` if the request fails, and the client has a two-second
+timeout by default. Go does not load `.env` files automatically.
+
+The local `replace` path is specific to your machine; do not commit it in an
+application you intend to share. When this module is released separately, its
+version tag will use the `sdk/go/` prefix. The Node and Go SDKs were added
+after the repository's `v0.1.0` release.
+
+All SDKs here are intended for server-side use. The Python and Node package
+versions start at `0.1.0` independently of the repository's release tags.

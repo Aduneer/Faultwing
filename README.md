@@ -6,7 +6,7 @@
 > Catch bugs before they infest production.
 
 Faultwing is a self-hosted error monitor built with Go, PostgreSQL, React, and
-small Python and Node.js SDKs. It accepts application exceptions, groups
+small Go, Python, and Node.js SDKs. It accepts application exceptions, groups
 repeated errors into issues, and turns unresolved issues into insects living in
 a terrarium. The normal issue list and stack traces are still there when it is
 time to debug.
@@ -31,7 +31,7 @@ _The frontend design and visual assets shown here were created with AI assistanc
 - Realtime dashboard refreshes over authenticated WebSockets
 - Responsive issue dashboard and terrarium, including a local demo mode
 - Stack-frame links for VS Code, Cursor, Zed, and JetBrains IDEs
-- Small Python and Node.js clients and a fake-error generator
+- Small Go, Python, and Node.js clients and a fake-error generator
 
 ## Quick start
 
@@ -80,10 +80,10 @@ inside the browser and is clearly labelled; it is not sent to the backend.
 
 ### Send an exception
 
-The [SDK guide](docs/sdks.md) shows how to install and use the Python or
-Node.js client with a project API key from your application's environment.
-Both clients are installed locally from this repository; neither is published
-to a package registry yet.
+The [SDK guide](docs/sdks.md) shows how to use the Go, Python, or Node.js
+client with a project API key from your application's environment. The clients
+are available from this repository; separate SDK releases are not published
+yet.
 
 To generate a small batch of sample errors with Python:
 
@@ -145,6 +145,7 @@ make test
 make test-integration
 make test-python
 make test-node
+make test-go-sdk
 make frontend-build
 make frontend-test
 ```
@@ -157,9 +158,9 @@ cd web
 npx playwright install chromium
 ```
 
-CI checks Go formatting, Go tests and vet, database integration flows, both
-SDKs, the frontend production build, and Playwright behavior on desktop and
-mobile viewports.
+CI checks Go formatting, Go tests and vet, database integration flows, all
+three SDKs, the frontend production build, and Playwright behavior on desktop
+and mobile viewports.
 
 ## Repository layout
 
@@ -170,6 +171,7 @@ internal/         Go application packages
 migrations/       embedded, ordered SQL migrations
 sdk/python/       Python client package
 sdk/node/         Node.js client package
+sdk/go/           Go client module
 web/              React/Vite dashboard
 docs/             API, architecture, and frontend notes
 scripts/          local development utilities
