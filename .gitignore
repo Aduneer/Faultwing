@@ -14,9 +14,11 @@ __pycache__/
 .venv/
 build/
 dist/
+!sdk/node/dist/
 web/node_modules/
 web/dist/
 web/test-results/
+sdk/node/node_modules/
 web/src/public/
 web/src/**/*.bak
 /frontend_mockup.png

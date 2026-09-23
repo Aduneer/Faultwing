@@ -1,0 +1,25 @@
+{
+  "name": "faultwing-node",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Node.js client for sending exceptions to Faultwing",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "npm run build && node --test tests/*.test.mjs"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2"
+  }
+}

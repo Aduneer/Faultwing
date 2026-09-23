@@ -16,6 +16,7 @@ Start PostgreSQL with `make db-up`, then run the checks relevant to your change:
 make test
 make test-integration
 make test-python
+make test-node
 make frontend-build
 make frontend-test
 ```

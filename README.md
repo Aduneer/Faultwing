@@ -5,11 +5,11 @@
 
 > Catch bugs before they infest production.
 
-Faultwing is a self-hosted error monitor built with Go, PostgreSQL, React, and a
-small Python SDK. It accepts application exceptions, groups repeated errors
-into issues, and turns unresolved issues into insects living in a terrarium.
-The normal issue list and stack traces are still there when it is time to
-debug.
+Faultwing is a self-hosted error monitor built with Go, PostgreSQL, React, and
+small Python and Node.js SDKs. It accepts application exceptions, groups
+repeated errors into issues, and turns unresolved issues into insects living in
+a terrarium. The normal issue list and stack traces are still there when it is
+time to debug.
 
 ![Faultwing desktop dashboard showing the issue terrarium and selected issue details](docs/assets/dashboard.webp)
 
@@ -31,7 +31,7 @@ _The frontend design and visual assets shown here were created with AI assistanc
 - Realtime dashboard refreshes over authenticated WebSockets
 - Responsive issue dashboard and terrarium, including a local demo mode
 - Stack-frame links for VS Code, Cursor, Zed, and JetBrains IDEs
-- A dependency-free Python client and fake-error generator
+- Small Python and Node.js clients and a fake-error generator
 
 ## Quick start
 
@@ -40,7 +40,7 @@ _The frontend design and visual assets shown here were created with AI assistanc
 - Go 1.27.1
 - Docker with Docker Compose
 - Node.js 26 and npm 12
-- Python 3.10 or newer if you want to use the SDK or error generator
+- Python 3.10 or newer if you want to use the Python SDK or error generator
 
 Clone the repository and start PostgreSQL:
 
@@ -78,35 +78,14 @@ are required for this local setup.
 Choose **Explore the interactive demo** on the welcome screen. Demo data stays
 inside the browser and is clearly labelled; it is not sent to the backend.
 
-### Send a Python exception
+### Send an exception
 
-Install the local SDK:
+The [SDK guide](docs/sdks.md) shows how to install and use the Python or
+Node.js client with a project API key from your application's environment.
+Both clients are installed locally from this repository; neither is published
+to a package registry yet.
 
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install -e sdk/python
-```
-
-Then use the API key from your project:
-
-```python
-from faultwing import Faultwing
-
-faultwing = Faultwing(
-    "http://localhost:8080",
-    "faultwing_your_api_key",
-    environment="development",
-    release="0.1.0",
-)
-
-try:
-    raise RuntimeError("the example service stopped responding")
-except RuntimeError as error:
-    faultwing.capture_exception(error)
-```
-
-Or generate a small batch of sample errors:
+To generate a small batch of sample errors with Python:
 
 ```bash
 FAULTWING_API_KEY=faultwing_your_api_key make generate-errors \
@@ -119,7 +98,7 @@ be running for that job to become an issue in the dashboard.
 ## How it works
 
 ```text
-Application / Python SDK
+Application / SDK
           │
           │ POST /api/v1/events + project API key
           ▼
@@ -141,7 +120,8 @@ jobs. Successful processing updates an issue and publishes a lightweight
 notification; dashboard clients then refetch authoritative data from the API.
 
 See [the architecture guide](docs/architecture.md) for component boundaries
-and failure behavior, [the API guide](docs/api.md) for HTTP examples, and
+and failure behavior, [the API guide](docs/api.md) for HTTP examples,
+[the SDK guide](docs/sdks.md) for client examples, and
 [the frontend guide](docs/frontend.md) for browser and editor integration.
 
 ## Configuration
@@ -164,6 +144,7 @@ Run the checks used during local development:
 make test
 make test-integration
 make test-python
+make test-node
 make frontend-build
 make frontend-test
 ```
@@ -176,9 +157,9 @@ cd web
 npx playwright install chromium
 ```
 
-CI checks Go formatting, Go tests and vet, database integration flows, the
-Python SDK, the frontend production build, and Playwright behavior on desktop
-and mobile viewports.
+CI checks Go formatting, Go tests and vet, database integration flows, both
+SDKs, the frontend production build, and Playwright behavior on desktop and
+mobile viewports.
 
 ## Repository layout
 
@@ -188,6 +169,7 @@ cmd/worker/       background event worker
 internal/         Go application packages
 migrations/       embedded, ordered SQL migrations
 sdk/python/       Python client package
+sdk/node/         Node.js client package
 web/              React/Vite dashboard
 docs/             API, architecture, and frontend notes
 scripts/          local development utilities
